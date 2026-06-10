@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   initialCreatorUploadState,
@@ -7,7 +8,12 @@ import {
   type CreatorUploadEvent,
   type CreatorUploadState,
 } from '@/src/domain/creator';
-import { pickCreatorVideo, type VideoPickerPort, type VideoUploaderPort } from '@/src/use-cases/creator';
+import {
+  pickCreatorVideo,
+  type VideoPickerPort,
+  type VideoUploaderPort,
+} from '@/src/use-cases/creator';
+import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
 import { useCreatorUpload } from './use-creator-upload';
 
 export type CreatorUploadScreenProps = {
@@ -63,8 +69,22 @@ export function CreatorUploadScreen({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Creator</Text>
-      {renderCreatorUploadState(state, handlePickVideo, handleDispatch, onExitFlow)}
+      <SafeAreaView style={styles.headerSafeArea}>
+        <View style={styles.header}>
+          <Text style={styles.brand}>VideoShare</Text>
+          <View style={styles.headerActions}>
+            <View style={styles.navPill}>
+              <Text style={styles.navPillText}>▣ Feed</Text>
+            </View>
+            <View style={[styles.navPill, styles.navPillActive]}>
+              <Text style={styles.navPillActiveText}>↥ Upload</Text>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+      <ScrollView contentContainerStyle={styles.content}>
+        {renderCreatorUploadState(state, handlePickVideo, handleDispatch, onExitFlow)}
+      </ScrollView>
     </View>
   );
 }
@@ -81,7 +101,22 @@ function renderCreatorUploadState(
 
     case 'picking':
       return (
-        <View style={styles.section}>
+        <View style={styles.uploadCard}>
+          <Text style={styles.formTitle}>Upload Video</Text>
+          <Text style={styles.mutedText}>
+            Select a video first. You will add the title and description after the file is chosen.
+          </Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>Video File</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onPickVideo}
+              style={styles.fileDropzone}>
+              <Text style={styles.uploadIcon}>↥</Text>
+              <Text style={styles.dropzoneText}>Click to upload or drag and drop</Text>
+              <Text style={styles.dropzoneMeta}>MP4, MOV, AVI (MAX. 500MB)</Text>
+            </Pressable>
+          </View>
           <Pressable accessibilityRole="button" onPress={onPickVideo} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Create upload</Text>
           </Pressable>
@@ -98,14 +133,36 @@ function renderCreatorUploadState(
 
     case 'editing':
       return (
-        <View style={styles.section}>
-          <Text>{getVideoLabel(state.video.fileName)}</Text>
-          <TextInput
-            placeholder="Video title"
-            value={state.title}
-            onChangeText={(title) => dispatch({ type: 'changeTitle', title })}
-            style={styles.input}
-          />
+        <View style={styles.uploadCard}>
+          <Text style={styles.formTitle}>Upload Video</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>Video Title</Text>
+            <TextInput
+              placeholder="Video title"
+              placeholderTextColor="#8a94a6"
+              value={state.title}
+              onChangeText={(title) => dispatch({ type: 'changeTitle', title })}
+              style={styles.input}
+            />
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Description</Text>
+            <TextInput
+              multiline
+              placeholder="Add a description..."
+              placeholderTextColor="#8a94a6"
+              value={state.description}
+              onChangeText={(description) => dispatch({ type: 'changeDescription', description })}
+              style={[styles.input, styles.textArea]}
+            />
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Video File</Text>
+            <View style={styles.selectedFile}>
+              <Text style={styles.selectedFileName}>{getVideoLabel(state.video.fileName)}</Text>
+              <Text style={styles.dropzoneMeta}>{state.video.mimeType ?? 'Selected video file'}</Text>
+            </View>
+          </View>
           {state.titleError ? <Text style={styles.errorText}>{state.titleError.message}</Text> : null}
           <Pressable
             accessibilityRole="button"
@@ -124,9 +181,12 @@ function renderCreatorUploadState(
 
     case 'uploading':
       return (
-        <View style={styles.section}>
-          <Text>Uploading {state.title}</Text>
-          <Text>Progress: {Math.round(state.progress * 100)}%</Text>
+        <View style={styles.uploadCard}>
+          <Text style={styles.formTitle}>Uploading {state.title}</Text>
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${Math.round(state.progress * 100)}%` }]} />
+          </View>
+          <Text style={styles.progressText}>Progress: {Math.round(state.progress * 100)}%</Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => dispatch({ type: 'cancelUpload' })}
@@ -138,9 +198,10 @@ function renderCreatorUploadState(
 
     case 'uploaded':
       return (
-        <View style={styles.section}>
-          <Text>Upload complete</Text>
-          <Text>{state.uploadedVideo.title}</Text>
+        <View style={styles.uploadCard}>
+          <Text style={styles.successIcon}>✓</Text>
+          <Text style={styles.formTitle}>Upload complete</Text>
+          <Text style={styles.mutedText}>{state.uploadedVideo.title}</Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => dispatch({ type: 'reset' })}
@@ -152,7 +213,8 @@ function renderCreatorUploadState(
 
     case 'failed':
       return (
-        <View style={styles.section}>
+        <View style={styles.uploadCard}>
+          <Text style={styles.formTitle}>Upload failed</Text>
           <Text style={styles.errorText}>{state.failure.message}</Text>
           <Pressable
             accessibilityRole="button"
@@ -172,31 +234,136 @@ function getVideoLabel(fileName: string | undefined): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    gap: 24,
-    padding: 24,
+    backgroundColor: AppColors.background,
   },
-  title: {
-    fontSize: 32,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: AppSpacing.md,
+    paddingBottom: AppSpacing.sm,
+    paddingTop: AppSpacing.sm,
+  },
+  headerSafeArea: {
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.softBorder,
+    backgroundColor: AppColors.surface,
+  },
+  brand: {
+    color: AppColors.text,
+    fontSize: 17,
     fontWeight: '700',
   },
-  section: {
-    gap: 12,
+  headerActions: {
+    flexDirection: 'row',
+    gap: AppSpacing.xs,
+  },
+  navPill: {
+    borderRadius: AppRadii.sm,
+    backgroundColor: AppColors.mutedSurface,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+  },
+  navPillActive: {
+    backgroundColor: AppColors.primary,
+  },
+  navPillText: {
+    color: '#344054',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  navPillActiveText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  content: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: AppSpacing.lg,
+  },
+  uploadCard: {
+    gap: AppSpacing.lg,
+    borderWidth: 1,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.lg,
+    ...AppShadow,
+  },
+  formTitle: {
+    color: AppColors.text,
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  field: {
+    gap: AppSpacing.sm,
+  },
+  label: {
+    color: AppColors.text,
+    fontSize: 13,
+    fontWeight: '700',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: AppColors.border,
+    borderRadius: AppRadii.sm,
+    color: AppColors.text,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  textArea: {
+    minHeight: 94,
+    textAlignVertical: 'top',
+  },
+  fileDropzone: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 160,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: AppColors.border,
+    borderRadius: AppRadii.sm,
+    padding: AppSpacing.lg,
+  },
+  uploadIcon: {
+    color: '#98a2b3',
+    fontSize: 42,
+    fontWeight: '700',
+  },
+  dropzoneText: {
+    color: AppColors.mutedText,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  dropzoneMeta: {
+    color: AppColors.mutedText,
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  selectedFile: {
+    gap: AppSpacing.xs,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: AppColors.border,
+    borderRadius: AppRadii.sm,
+    padding: AppSpacing.md,
+  },
+  selectedFileName: {
+    color: AppColors.text,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  mutedText: {
+    color: AppColors.mutedText,
   },
   primaryButton: {
-    alignSelf: 'flex-start',
-    borderRadius: 8,
-    backgroundColor: '#0a7ea4',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: AppRadii.sm,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: AppSpacing.md,
+    paddingVertical: 14,
   },
   primaryButtonText: {
     color: '#fff',
@@ -204,13 +371,35 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     alignSelf: 'flex-start',
-    borderRadius: 8,
+    borderRadius: AppRadii.sm,
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    paddingHorizontal: 16,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surface,
+    paddingHorizontal: AppSpacing.md,
     paddingVertical: 12,
   },
+  progressTrack: {
+    height: 12,
+    overflow: 'hidden',
+    borderRadius: 999,
+    backgroundColor: AppColors.mutedSurface,
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+    backgroundColor: AppColors.primary,
+  },
+  progressText: {
+    color: AppColors.mutedText,
+    fontWeight: '700',
+  },
+  successIcon: {
+    color: AppColors.primary,
+    fontSize: 40,
+    fontWeight: '800',
+  },
   errorText: {
-    color: '#b42318',
+    color: AppColors.danger,
+    fontWeight: '700',
   },
 });

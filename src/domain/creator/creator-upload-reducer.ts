@@ -36,6 +36,7 @@ export function reduceCreatorUpload(
           status: 'editing',
           video: event.video,
           title: '',
+          description: '',
         };
       }
 
@@ -72,6 +73,16 @@ export function reduceCreatorUpload(
           status: 'editing',
           video: state.video,
           title: event.title,
+          description: state.description,
+        };
+      }
+
+      if (event.type === 'changeDescription') {
+        return {
+          status: 'editing',
+          video: state.video,
+          title: state.title,
+          description: event.description,
         };
       }
 
@@ -92,6 +103,7 @@ export function reduceCreatorUpload(
           status: 'uploading',
           video: state.video,
           title: state.title,
+          description: state.description,
           progress: 0,
         };
       }
@@ -104,6 +116,7 @@ export function reduceCreatorUpload(
           status: 'editing',
           video: state.video,
           title: state.title,
+          description: state.description,
         };
       }
 

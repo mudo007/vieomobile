@@ -81,6 +81,7 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: '',
+        description: '',
       });
     });
 
@@ -132,6 +133,7 @@ describe('creator upload reducer', () => {
       status: 'editing',
       video: selectedVideo,
       title: '',
+      description: '',
     };
 
     it('updates the title while editing', () => {
@@ -146,6 +148,26 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: 'Launch demo',
+        description: '',
+      });
+    });
+
+    it('updates the description while editing', () => {
+      // Given
+      const state = editingState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, {
+        type: 'changeDescription',
+        description: 'A quick launch walkthrough.',
+      });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'editing',
+        video: selectedVideo,
+        title: '',
+        description: 'A quick launch walkthrough.',
       });
     });
 
@@ -161,6 +183,7 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: '',
+        description: '',
         titleError: {
           type: 'missingTitle',
           message: 'Title is required.',
@@ -174,6 +197,7 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: 'Launch demo',
+        description: 'A quick launch walkthrough.',
       };
 
       // When
@@ -184,6 +208,7 @@ describe('creator upload reducer', () => {
         status: 'uploading',
         video: selectedVideo,
         title: 'Launch demo',
+        description: 'A quick launch walkthrough.',
         progress: 0,
       });
     });
@@ -194,6 +219,7 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: 'Launch demo',
+        description: 'A quick launch walkthrough.',
       };
 
       // When
@@ -222,6 +248,7 @@ describe('creator upload reducer', () => {
       status: 'uploading',
       video: selectedVideo,
       title: 'Launch demo',
+      description: 'A quick launch walkthrough.',
       progress: 0,
     };
 
@@ -299,6 +326,7 @@ describe('creator upload reducer', () => {
         status: 'editing',
         video: selectedVideo,
         title: 'Launch demo',
+        description: 'A quick launch walkthrough.',
       });
     });
   });

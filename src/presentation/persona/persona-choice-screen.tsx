@@ -1,11 +1,12 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   choosePersona,
   type Persona,
   type PersonaDestination,
 } from '@/src/domain/persona';
-import { ThemedText } from '@/src/presentation/shared/themed-text';
+import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
 
 type PersonaChoiceScreenProps = {
   onChoosePersona?: (persona: Persona, destination: PersonaDestination) => void;
@@ -17,61 +18,153 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
   };
 
   return (
-    <View style={styles.container}>
-      <ThemedText type="title" style={styles.text}>
-        Video Mobile
-      </ThemedText>
-      <ThemedText style={[styles.description, styles.text]}>
-        Choose a mode to enter the app skeleton.
-      </ThemedText>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.brand}>VideoShare</Text>
+        <View style={styles.versionPill}>
+          <Text style={styles.versionText}>Version 1.0.0</Text>
+        </View>
+      </View>
+
+      <View style={styles.heroCard}>
+        <Text style={styles.kicker}>Learning showcase</Text>
+        <Text style={styles.title}>Choose your flow</Text>
+        <Text style={styles.description}>
+          Explore the app through fake-backed vertical slices before native adapters are added.
+        </Text>
+      </View>
 
       <View style={styles.actions}>
         <Pressable
           accessibilityRole="button"
           onPress={() => handleChoose('creator')}
           style={styles.card}>
-          <ThemedText type="subtitle" style={styles.text}>
-            Creator
-          </ThemedText>
-          <ThemedText style={styles.text}>Upload videos into a gallery.</ThemedText>
+          <View style={styles.cardIcon}>
+            <Text style={styles.cardIconText}>↥</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>Creator</Text>
+            <Text style={styles.cardDescription}>Upload videos into a gallery.</Text>
+          </View>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
           onPress={() => handleChoose('follower')}
           style={styles.card}>
-          <ThemedText type="subtitle" style={styles.text}>
-            Follower
-          </ThemedText>
-          <ThemedText style={styles.text}>Browse creator videos in a feed.</ThemedText>
+          <View style={[styles.cardIcon, styles.cardIconPurple]}>
+            <Text style={styles.cardIconText}>▣</Text>
+          </View>
+          <View style={styles.cardContent}>
+            <Text style={styles.cardTitle}>Follower</Text>
+            <Text style={styles.cardDescription}>Browse creator videos in a feed.</Text>
+          </View>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    gap: 24,
-    padding: 24,
+    backgroundColor: AppColors.background,
+    gap: AppSpacing.lg,
+    padding: AppSpacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.md,
+    ...AppShadow,
+  },
+  brand: {
+    color: AppColors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  versionPill: {
+    borderRadius: 999,
+    backgroundColor: AppColors.mutedSurface,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  versionText: {
+    color: AppColors.mutedText,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  heroCard: {
+    gap: AppSpacing.sm,
+    borderWidth: 1,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.lg,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.lg,
+    ...AppShadow,
+  },
+  kicker: {
+    color: AppColors.primary,
+    fontSize: 13,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  title: {
+    color: AppColors.text,
+    fontSize: 30,
+    fontWeight: '900',
   },
   description: {
-    maxWidth: 320,
-  },
-  text: {
-    color: '#000',
+    color: AppColors.mutedText,
+    fontSize: 15,
+    lineHeight: 22,
   },
   actions: {
-    gap: 12,
+    gap: AppSpacing.md,
   },
   card: {
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: AppSpacing.md,
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    borderRadius: 8,
-    padding: 16,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.md,
+    ...AppShadow,
+  },
+  cardIcon: {
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 16,
+    backgroundColor: AppColors.primary,
+  },
+  cardIconPurple: {
+    backgroundColor: AppColors.purple,
+  },
+  cardIconText: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  cardContent: {
+    flex: 1,
+    gap: AppSpacing.xs,
+  },
+  cardTitle: {
+    color: AppColors.text,
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  cardDescription: {
+    color: AppColors.mutedText,
+    fontSize: 14,
   },
 });

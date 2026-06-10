@@ -3,6 +3,11 @@ export type FollowerFeedVideo = {
   title: string;
   creatorName: string;
   durationLabel: string;
+  description?: string;
+  imageUri?: string;
+  likeCount?: number;
+  commentCount?: number;
+  publishedAgo?: string;
 };
 
 export type FollowerFeedState =

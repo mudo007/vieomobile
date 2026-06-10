@@ -13,6 +13,8 @@ The app has two fake vertical slices:
 
 Both flows are intentionally fake-backed. This lets the presentation, state modeling, and testing strategy be validated before adding Expo media picker, playback, storage, or backend integrations.
 
+The current presentation pass is based on the supplied Figma references: light gray app background, white rounded cards, blue primary actions, muted secondary pills, image-first feed cards, and a form-card upload layout.
+
 ## Commands
 
 Install dependencies:
@@ -52,6 +54,8 @@ npm test
 `src/adapters/` contains fake or platform implementations of ports. Current adapters are fake implementations for video picking, video uploading, and follower feed loading/refreshing.
 
 `src/presentation/` contains React Native screens and presentation hooks. Screens render state, dispatch user intents, and use hooks to run side effects such as loading a feed or uploading a video.
+
+`src/presentation/shared/app-design.ts` contains shared color, radius, spacing, and shadow tokens used by the current Figma-inspired UI pass.
 
 Tests are colocated under each hierarchy's `__tests__` folder.
 
@@ -146,14 +150,17 @@ Acceptance criteria:
 
 ### Milestone 4. Presentation Polish
 
-Status: next.
+Status: initial pass complete.
 
 Goal: make the app visually consistent and interview-demo friendly before adding native adapter complexity.
 
-Candidate work:
+Completed:
 
 - Introduce shared visual tokens for color, spacing, typography, and cards.
 - Replace placeholder-looking screens with intentional Home, Creator, and Follower layouts.
+
+Remaining candidate work:
+
 - Create reusable button/card components only where duplication is clear.
 - Keep existing tests focused on behavior rather than snapshots.
 

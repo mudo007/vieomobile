@@ -4,15 +4,28 @@ import type { FollowerFeedPort, LoadFollowerFeedInput } from '@/src/use-cases/fo
 const demoFeedVideos: FollowerFeedVideo[] = [
   {
     id: 'feed-video-1',
-    title: 'Launch demo',
-    creatorName: 'Creator Studio',
+    title: 'Amazing Sunset Timelapse',
+    creatorName: 'NatureFilms',
     durationLabel: '00:42',
+    description:
+      'Captured this beautiful sunset over the mountains. The colors were absolutely stunning!',
+    imageUri:
+      'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80',
+    likeCount: 1234,
+    commentCount: 89,
+    publishedAgo: '2 hours ago',
   },
   {
     id: 'feed-video-2',
-    title: 'Behind the scenes',
-    creatorName: 'Mobile Team',
+    title: 'Quick Cooking Tutorial: Pasta Carbonara',
+    creatorName: 'Kitchen Notes',
     durationLabel: '01:18',
+    description: 'A fast weeknight carbonara with crispy pancetta and a silky sauce.',
+    imageUri:
+      'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&w=900&q=80',
+    likeCount: 842,
+    commentCount: 37,
+    publishedAgo: '5 hours ago',
   },
 ];
 

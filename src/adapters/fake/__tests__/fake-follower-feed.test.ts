@@ -22,18 +22,18 @@ describe('FakeFollowerFeed', () => {
 
     // Then
     expect(videos).toEqual([
-      {
+      expect.objectContaining({
         id: 'feed-video-1',
-        title: 'Launch demo',
-        creatorName: 'Creator Studio',
+        title: 'Amazing Sunset Timelapse',
+        creatorName: 'NatureFilms',
         durationLabel: '00:42',
-      },
-      {
+      }),
+      expect.objectContaining({
         id: 'feed-video-2',
-        title: 'Behind the scenes',
-        creatorName: 'Mobile Team',
+        title: 'Quick Cooking Tutorial: Pasta Carbonara',
+        creatorName: 'Kitchen Notes',
         durationLabel: '01:18',
-      },
+      }),
     ]);
   });
 

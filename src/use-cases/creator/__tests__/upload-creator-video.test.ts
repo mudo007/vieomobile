@@ -11,6 +11,7 @@ const uploadingState: CreatorUploadState = {
   status: 'uploading',
   video: selectedVideo,
   title: 'Launch demo',
+  description: 'A quick launch walkthrough.',
   progress: 0,
 };
 

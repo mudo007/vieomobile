@@ -109,25 +109,33 @@ function createManualVideoUploader() {
 describe('<CreatorUploadScreen />', () => {
   it('renders the picking upload action', async () => {
     // Given / When
-    const { getByText } = await renderWithPickerResult({ type: 'cancelled' });
+    const { getByText, queryByPlaceholderText, queryByText } = await renderWithPickerResult({
+      type: 'cancelled',
+    });
 
     // Then
     expect(getByText('Create upload')).toBeTruthy();
+    expect(queryByPlaceholderText('Video title')).toBeNull();
+    expect(queryByText('Description')).toBeNull();
   });
 
   it('opens the picker and renders the editing form after a valid video is selected', async () => {
     // Given
-    const { findByText, getByText, videoPicker } = await renderWithPickerResult({
-      type: 'videoSelected',
-      video: selectedVideo,
-    });
+    const { findByPlaceholderText, findByText, getByText, videoPicker } =
+      await renderWithPickerResult({
+        type: 'videoSelected',
+        video: selectedVideo,
+      });
 
     // When
     await press(getByText('Create upload'));
 
     // Then
+    const descriptionInput = await findByPlaceholderText('Add a description...');
+
     expect(await findByText('video.mov')).toBeTruthy();
     expect(await findByText('Confirm upload')).toBeTruthy();
+    expect(descriptionInput.props.editable).not.toBe(false);
     expect(videoPicker.pickVideoCallCount).toBe(1);
   });
 
@@ -299,6 +307,7 @@ describe('<CreatorUploadScreen />', () => {
       status: 'editing',
       video: selectedVideo,
       title: 'Launch demo',
+      description: 'A quick launch walkthrough.',
     };
     const { getByText, queryByText } = await renderWithPickerResult(
       { type: 'cancelled' },
@@ -319,6 +328,7 @@ describe('<CreatorUploadScreen />', () => {
       status: 'uploading',
       video: selectedVideo,
       title: 'Launch demo',
+      description: 'A quick launch walkthrough.',
       progress: 0.4,
     };
     const manualUploader = createManualVideoUploader();

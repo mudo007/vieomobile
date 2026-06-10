@@ -50,12 +50,14 @@ export type CreatorUploadState =
     status: 'editing';
     video: SelectedVideo;
     title: string;
+    description: string;
     titleError?: CreatorUploadValidationFailure;
   }
   | {
     status: 'uploading';
     video: SelectedVideo;
     title: string;
+    description: string;
     progress: number;
   }
   | {
@@ -91,6 +93,10 @@ export type CreatorUploadEvent =
   | {
     type: 'changeTitle';
     title: string;
+  }
+  | {
+    type: 'changeDescription';
+    description: string;
   }
   | {
     type: 'cancelEditing';

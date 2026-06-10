@@ -1,6 +1,7 @@
 import { useReducer } from 'react';
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -8,6 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
   initialFollowerFeedState,
@@ -17,6 +19,7 @@ import {
   type FollowerFeedVideo,
 } from '@/src/domain/follower';
 import type { FollowerFeedPort } from '@/src/use-cases/follower';
+import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
 import { useFollowerFeed } from './use-follower-feed';
 
 export type FollowerFeedScreenProps = {
@@ -47,15 +50,27 @@ export function FollowerFeedScreen({
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Follower</Text>
+      <SafeAreaView style={styles.headerSafeArea}>
+        <View style={styles.header}>
+          <Text style={styles.brand}>VideoShare</Text>
+          <View style={styles.headerActions}>
+            <View style={[styles.navPill, styles.navPillActive]}>
+              <Text style={styles.navPillActiveText}>▣ Feed</Text>
+            </View>
+            <View style={styles.navPill}>
+              <Text style={styles.navPillText}>↥ Upload</Text>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+      <View style={styles.content}>
         {onExitFlow ? (
           <Pressable accessibilityRole="button" onPress={onExitFlow} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Back home</Text>
           </Pressable>
         ) : null}
+        {renderFollowerFeedState(state, handleDispatch)}
       </View>
-      {renderFollowerFeedState(state, handleDispatch)}
     </View>
   );
 }
@@ -66,19 +81,25 @@ function renderFollowerFeedState(
 ) {
   switch (state.status) {
     case 'loading':
-      return <Text style={styles.text}>Loading feed...</Text>;
+      return (
+        <View style={styles.stateCard}>
+          <ActivityIndicator color={AppColors.primary} />
+          <Text style={styles.text}>Loading feed...</Text>
+        </View>
+      );
 
     case 'empty':
       return (
-        <View style={styles.section}>
-          <Text style={styles.text}>No videos yet.</Text>
+        <View style={styles.stateCard}>
+          <Text style={styles.stateTitle}>No videos yet.</Text>
+          <Text style={styles.mutedText}>Pull down or tap refresh to check again.</Text>
           <RefreshButton dispatch={dispatch} />
         </View>
       );
 
     case 'failed':
       return (
-        <View style={styles.section}>
+        <View style={styles.stateCard}>
           <Text style={styles.errorText}>{state.message}</Text>
           <RefreshButton dispatch={dispatch} />
         </View>
@@ -91,7 +112,7 @@ function renderFollowerFeedState(
           <View style={styles.fakeFrame}>
             <Text style={styles.fakeFrameText}>Video plays here</Text>
           </View>
-          <Text style={styles.text}>{state.video.creatorName}</Text>
+          <Text style={styles.mutedText}>{state.video.creatorName}</Text>
           <Pressable
             accessibilityRole="button"
             onPress={() => dispatch({ type: 'closeVideo' })}
@@ -105,10 +126,11 @@ function renderFollowerFeedState(
     case 'refreshing':
       return (
         <View style={styles.feedContainer}>
+          <Text style={styles.pageTitle}>Your Feed</Text>
           {state.status === 'refreshing' ? (
             <ActivityIndicator
               accessibilityLabel="Refreshing feed"
-              color="#0a7ea4"
+              color={AppColors.primary}
               size="small"
             />
           ) : null}
@@ -119,7 +141,7 @@ function renderFollowerFeedState(
               <RefreshControl
                 refreshing={state.status === 'refreshing'}
                 onRefresh={() => dispatch({ type: 'refreshFeed' })}
-                tintColor="#0a7ea4"
+                tintColor={AppColors.primary}
               />
             }>
           {state.videos.map((video) => (
@@ -143,9 +165,29 @@ function FollowerVideoCard({
       accessibilityRole="button"
       onPress={() => dispatch({ type: 'videoSelected', video })}
       style={styles.card}>
-      <Text style={styles.cardTitle}>{video.title}</Text>
-      <Text style={styles.text}>{video.creatorName}</Text>
-      <Text style={styles.duration}>{video.durationLabel}</Text>
+      {video.imageUri ? (
+        <Image source={{ uri: video.imageUri }} style={styles.cardImage} />
+      ) : (
+        <View style={styles.cardImageFallback}>
+          <Text style={styles.cardImageFallbackText}>Video</Text>
+        </View>
+      )}
+      <View style={styles.cardBody}>
+        <View style={styles.avatar}>
+          <Text style={styles.avatarText}>♡</Text>
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{video.title}</Text>
+          <Text style={styles.creatorName}>{video.creatorName}</Text>
+          {video.description ? <Text style={styles.description}>{video.description}</Text> : null}
+          <View style={styles.cardMeta}>
+            <Text style={styles.metaText}>♡ {video.likeCount ?? 0}</Text>
+            <Text style={styles.metaText}>◌ {video.commentCount ?? 0}</Text>
+            <Text style={styles.metaText}>⌯</Text>
+            <Text style={[styles.metaText, styles.metaTime]}>{video.publishedAgo ?? video.durationLabel}</Text>
+          </View>
+        </View>
+      </View>
     </Pressable>
   );
 }
@@ -164,55 +206,178 @@ function RefreshButton({ dispatch }: { dispatch: (event: FollowerFeedEvent) => v
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    gap: 24,
-    padding: 24,
-    paddingTop: 64,
+    backgroundColor: AppColors.background,
   },
   header: {
-    gap: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: AppSpacing.md,
+    paddingBottom: AppSpacing.sm,
+    paddingTop: AppSpacing.sm,
   },
-  title: {
-    color: '#000',
-    fontSize: 32,
+  headerSafeArea: {
+    borderBottomWidth: 1,
+    borderBottomColor: AppColors.softBorder,
+    backgroundColor: AppColors.surface,
+  },
+  brand: {
+    color: AppColors.text,
+    fontSize: 17,
     fontWeight: '700',
   },
-  section: {
-    gap: 12,
+  headerActions: {
+    flexDirection: 'row',
+    gap: AppSpacing.xs,
+  },
+  navPill: {
+    borderRadius: AppRadii.sm,
+    backgroundColor: AppColors.mutedSurface,
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+  },
+  navPillActive: {
+    backgroundColor: AppColors.primary,
+  },
+  navPillText: {
+    color: '#344054',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  navPillActiveText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  content: {
+    flex: 1,
+    gap: AppSpacing.md,
+    padding: AppSpacing.md,
+  },
+  pageTitle: {
+    color: AppColors.text,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: AppSpacing.sm,
   },
   feedContainer: {
     flex: 1,
-    gap: 12,
+    gap: AppSpacing.sm,
   },
   feed: {
-    gap: 12,
-    paddingBottom: 24,
+    gap: AppSpacing.lg,
+    paddingBottom: AppSpacing.xl,
   },
   card: {
-    gap: 8,
+    overflow: 'hidden',
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    borderRadius: 12,
-    padding: 16,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    ...AppShadow,
   },
-  cardTitle: {
-    color: '#000',
-    fontSize: 20,
+  cardImage: {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: AppColors.mutedSurface,
+  },
+  cardImageFallback: {
+    aspectRatio: 16 / 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.mutedSurface,
+  },
+  cardImageFallbackText: {
+    color: AppColors.mutedText,
     fontWeight: '700',
   },
-  text: {
-    color: '#000',
+  cardBody: {
+    flexDirection: 'row',
+    gap: AppSpacing.sm,
+    padding: AppSpacing.md,
   },
-  duration: {
-    color: '#444',
+  avatar: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 18,
+    backgroundColor: AppColors.purple,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  cardContent: {
+    flex: 1,
+    gap: AppSpacing.xs,
+  },
+  cardTitle: {
+    color: AppColors.text,
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 22,
+  },
+  creatorName: {
+    color: AppColors.text,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  text: {
+    color: AppColors.text,
+  },
+  mutedText: {
+    color: AppColors.mutedText,
+  },
+  description: {
+    color: AppColors.mutedText,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  cardMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: AppSpacing.md,
+    borderTopWidth: 1,
+    borderTopColor: AppColors.softBorder,
+    marginTop: AppSpacing.xs,
+    paddingTop: AppSpacing.sm,
+  },
+  metaText: {
+    color: '#344054',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  metaTime: {
+    marginLeft: 'auto',
+    color: '#98a2b3',
+    fontWeight: '600',
+  },
+  stateCard: {
+    gap: AppSpacing.md,
+    borderWidth: 1,
+    borderColor: AppColors.softBorder,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.lg,
+    ...AppShadow,
+  },
+  stateTitle: {
+    color: AppColors.text,
+    fontSize: 18,
     fontWeight: '700',
   },
   player: {
     flex: 1,
-    gap: 16,
+    gap: AppSpacing.md,
+    borderRadius: AppRadii.md,
+    backgroundColor: AppColors.surface,
+    padding: AppSpacing.md,
+    ...AppShadow,
   },
   playerTitle: {
-    color: '#000',
+    color: AppColors.text,
     fontSize: 24,
     fontWeight: '700',
   },
@@ -220,9 +385,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 20,
-    backgroundColor: '#111',
-    padding: 24,
+    borderRadius: AppRadii.lg,
+    backgroundColor: AppColors.darkFrame,
+    padding: AppSpacing.lg,
   },
   fakeFrameText: {
     color: '#fff',
@@ -230,13 +395,14 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   errorText: {
-    color: '#b42318',
+    color: AppColors.danger,
+    fontWeight: '700',
   },
   primaryButton: {
     alignSelf: 'flex-start',
-    borderRadius: 8,
-    backgroundColor: '#0a7ea4',
-    paddingHorizontal: 16,
+    borderRadius: AppRadii.sm,
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: AppSpacing.md,
     paddingVertical: 12,
   },
   primaryButtonText: {
@@ -245,13 +411,15 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     alignSelf: 'flex-start',
-    borderRadius: 8,
+    borderRadius: AppRadii.sm,
     borderWidth: 1,
-    borderColor: '#d0d7de',
-    paddingHorizontal: 16,
+    borderColor: AppColors.border,
+    backgroundColor: AppColors.surface,
+    paddingHorizontal: AppSpacing.md,
     paddingVertical: 12,
   },
   secondaryButtonText: {
-    color: '#000',
+    color: AppColors.text,
+    fontWeight: '700',
   },
 });
