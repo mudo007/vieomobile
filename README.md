@@ -1,83 +1,84 @@
-# viedeomobile
-This is an example app with the purpose of learning and practicing React Native with Expo using DDD and TDD. It is a simple app with 2 independent modes "creator" and "follower". No login screens required. They will share the same database for this demonstration, so that the follower part of the app can see what the creator side of the app creted.
-I will also add automatic OTA updates through expo, with small cosmetic changes, such as changing a background color 
+# videomobile
 
-## Modeling
-Let's first create te ubiquitous language for tis domain
-- a  **Creator** uploads a **Video** from his **Phone Library** into his **Gallery**
-- a  **Creator** browses uploaded **Video** from his **Gallery**, **haptics** on success
-- a **Follower** sees uploaded **Video**s from the **Creator** on his **Feed** as **Cards**
-- a **OTA update** triggers a change on the **Background Color**
+This is a throwaway learning showcase for React Native with Expo. The goal is to learn the Expo development flow while keeping business logic independent from React Native where it makes sense.
 
-## Flows
-- **Creator** uploads a **Video**: Opens app -> taps **Creator** -> taps Create -> picks video from library -> adds title -> confirms -> sees upload progress -> lands back on **Galery** with their post at top.
-- **Follower** discovers a **Video**: Opens app -> taps **Follower** ->scrolls **Feed** -> taps a **Card** -> **Video** plays full screen -> taps back -> continues scrolling the **Feed**.
-- Aan **OTA update** arrives silently: opens app -> OTA check runs in background -> updated JS bundle loads -> user sees new **Background Color** without visiting the store. (any screen)
+The app starts with two personas:
 
+- **Creator**: eventually uploads videos into a gallery.
+- **Follower**: eventually browses creator videos in a feed.
 
-## States
-| State | Home | Feed | Gallery | Player
-|---|---|---|---|---|
-| Loading | Personas Loading | Feed loading | Uploading | Buffering |
-| idle | N/A | Empty Feed | Ready to create | Video Paused |
-| active | Personas choice | Cards loaded| Video picked | Now Playing |
-| error | Persona Error | Feed Error | Create Error | Player Error |
+The current milestone is the walking skeleton: the app boots on Expo SDK 54, renders a persona choice screen, has one pure TypeScript core test, has one React Native screen test, and runs a local/CI quality gate.
 
-# Milestones
+## Commands
 
-## Infrastrucutre
-- Download frameworks and dependencies, I am  using a macbook pro M4 and an Iphone 16 Plus for testing if needed. Preferably use only Docker so that nothing gets installed on the local machine. I have done this type of setup a long time go see the repo https://github.com/mudo007/NLW-spacetime/tree/main
+Install dependencies:
 
-## App logic
-On this staage, we will use defaut library visual components, and we will care only about "business logic" created with TDD.
+```zsh
+npm install
+```
 
-### Walking skeleton
-- Components tree
-- Scaffold Expo Router project with Typescript
+Start the app for Expo Go:
 
-### Persona screen
-- Create persona cards component 
-- Create state transitions
-    - Home screen-> Taps Creator -> Change to Gallery Screen
-    - Home screen-> Taps Follower -> Change to Feed Screen
+```zsh
+npx expo start -c -g --lan
+```
 
-### Gallery Screen
-- Create upload video Form
-- Create gallery picker
-- Create video card
-- Create state transitions
-    - Gallery -> back button -> Home screen
-    - Gallery -> Upload Video -> Video Picker 
-    - Video Picker -> back button -> Gallery
-    - Video Picker -> select single video -> confirm button -> Uploading
-    - Video Picker -> select single video -> play -> Video Player
-    - Video Player -> back button -> Video Picker
-    - Video Player -> pause button  -> Video Paused
-    - Video Player -> play button -> Video Buffering /Playing
-    - Video Picker -> select single video -> back buttom -> Gallery
-    - Uploading -> time passes -> upload sucessful card -> Gallery
-    - Uploading -> time passes -> upload error card -> Gallery
-    - Uploading -> cancel button -> Video Picker
+Run the full local quality gate:
 
-### Feed Screen
-- Create Feed view form
-- *reuse Video Card and Video Player from Gallery*
-- Create Refresh component
-- Create loading feed component
-- Create state transitions
-    - Feed -> back button -> Home screen
-    - Feed -> refresh button -> Feed loading -> Feed
-    - Feed -> video card -> Video player
-    - *reuse Video plaeyr states except for*:
-    - Video Player -> back button -> Feed
+```zsh
+npm run ci
+```
 
-### OTA background
-- Create OTA boilerplate
-- State transition
-    - Any screen -> OTA arrives -> Background color changes
+Run individual checks:
 
+```zsh
+npm run lint
+npm run typecheck
+npm test
+```
 
+## Walking Skeleton
 
+`app/` contains the Expo Router entry points and route layout. It should stay focused on navigation and screen composition.
 
+`components/` contains React Native UI components. The current app-specific component is `PersonaChoiceScreen`, which renders the Creator/Follower choices and delegates business decisions to the core.
 
+`src/core/` contains pure TypeScript application logic. It must not import React, React Native, or Expo APIs; this is the main TDD surface.
 
+`__tests__/core/` contains fast Node/Jest tests for pure TypeScript behavior. These tests should cover state transitions and business rules before mobile adapters exist.
+
+`__tests__/screens/` contains React Native Testing Library tests for screen-facing behavior. These tests verify rendered output and user interactions, not native device integration.
+
+`docs/` contains project setup notes. `docs/mac-install.md` records the Mac setup flow, and `docs/dependencies.md` records dependency installation commands.
+
+`.github/workflows/ci.yml` runs the quality gate on GitHub Actions. It installs dependencies with `npm ci`, then runs lint, typecheck, and tests.
+
+## Configuration
+
+`package.json` defines Expo scripts plus `lint`, `typecheck`, `test`, and `ci`. It also configures Jest with `jest-expo` and disables Watchman for stable local and CI runs.
+
+`tsconfig.json` extends Expo's base TypeScript config, enables strict mode, and exposes Jest types for test files.
+
+`jest.setup.ts` loads React Native Testing Library matchers. Keep native mocks here when a screen test needs a platform boundary isolated.
+
+`eslint.config.js` uses Expo's flat ESLint config. The current lint step is intentionally lightweight for the walking skeleton.
+
+`app.json` stores Expo app configuration. Typed routes are disabled for now so the early skeleton can stay simple; they can be re-enabled once the route map stabilizes.
+
+## Testing Strategy
+
+The core rule is to separate business logic from rendering and platform APIs.
+
+Pure logic belongs in `src/core` and should be developed test-first. React Native screens should call that logic rather than hiding business decisions inside components.
+
+The first core test proves persona selection maps to an application destination. The first screen test proves both persona choices render and that selecting Creator emits the expected destination.
+
+Native behavior such as media picker permissions, video playback, haptics, and OTA updates will need targeted device or E2E validation later. Unit and screen tests do not prove those platform paths.
+
+## Milestone 1 Status
+
+- Expo SDK 54 app boots in Expo Go.
+- CI workflow exists.
+- `npm run ci` passes locally.
+- One core test passes.
+- One screen test passes.
