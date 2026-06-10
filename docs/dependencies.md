@@ -47,6 +47,44 @@ eas update:configure
 
 See `docs/ota-updates.md` for the full flow.
 
+## iOS Simulator tooling
+
+If `open -a Simulator` does not open a usable simulator, or `xcrun simctl list devices available` returns no devices, finish Xcode's local setup and install the iOS simulator platform:
+
+```zsh
+sudo xcodebuild -license accept
+sudo xcodebuild -runFirstLaunch
+xcodebuild -downloadPlatform iOS
+```
+
+Verify that runtimes, device types, and devices are available:
+
+```zsh
+xcrun simctl list runtimes available
+xcrun simctl list devicetypes available
+xcrun simctl list devices available
+```
+
+If devices are still empty, create one from Xcode:
+
+```zsh
+open -a Xcode
+```
+
+Then use:
+
+```text
+Xcode > Settings > Platforms
+Xcode > Window > Devices and Simulators > Simulators > +
+```
+
+After a simulator exists, run the downloaded EAS simulator build:
+
+```zsh
+open -a Simulator
+eas build:run --platform ios
+```
+
 ## Future native dependencies
 
 Do not install other native Expo modules until the fake vertical slices, presentation design, and OTA update showcase are validated.
