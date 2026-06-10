@@ -1,0 +1,95 @@
+import {
+  pickCreatorVideo,
+  type PickCreatorVideoResult,
+  type VideoPickerPort,
+} from '@/src/use-cases/creator';
+import type { CreatorUploadState, SelectedVideo } from '@/src/domain/creator';
+
+const selectedVideo: SelectedVideo = {
+  uri: 'file:///creator/video.mov',
+  fileName: 'video.mov',
+  mimeType: 'video/quicktime',
+};
+
+function createVideoPicker(result: PickCreatorVideoResult): VideoPickerPort {
+  return {
+    pickVideo: jest.fn().mockResolvedValue(result),
+  };
+}
+
+function createThrowingVideoPicker(error: unknown): VideoPickerPort {
+  return {
+    pickVideo: jest.fn().mockRejectedValue(error),
+  };
+}
+
+describe('pickCreatorVideo', () => {
+  it('does not call the picker when the upload flow is not picking', async () => {
+    const idleState: CreatorUploadState = { status: 'idle' };
+    const videoPicker = createVideoPicker({ type: 'videoSelected', video: selectedVideo });
+
+    await expect(pickCreatorVideo(idleState, { videoPicker })).resolves.toBeNull();
+    expect(videoPicker.pickVideo).not.toHaveBeenCalled();
+  });
+
+  it('returns a cancel event when the picker is cancelled', async () => {
+    const videoPicker = createVideoPicker({ type: 'cancelled' });
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'cancelPicking',
+    });
+  });
+
+  it('returns a permission denied event when media access is denied', async () => {
+    const videoPicker = createVideoPicker({
+      type: 'permissionDenied',
+      message: 'Media library access is required.',
+    });
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'mediaPermissionDenied',
+      message: 'Media library access is required.',
+    });
+  });
+
+  it('returns an unsupported video event when the picked video is not usable', async () => {
+    const videoPicker = createVideoPicker({
+      type: 'unsupportedVideo',
+      message: 'Only local video files are supported.',
+      video: selectedVideo,
+    });
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'unsupportedVideoPicked',
+      message: 'Only local video files are supported.',
+      video: selectedVideo,
+    });
+  });
+
+  it('returns a video selected event when the picker returns a valid video', async () => {
+    const videoPicker = createVideoPicker({ type: 'videoSelected', video: selectedVideo });
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'videoSelected',
+      video: selectedVideo,
+    });
+  });
+
+  it('returns an unexpected failure event when the picker throws an Error', async () => {
+    const videoPicker = createThrowingVideoPicker(new Error('Native picker crashed.'));
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'unexpectedFailure',
+      message: 'Native picker crashed.',
+    });
+  });
+
+  it('returns a generic unexpected failure event when the picker throws a non-Error value', async () => {
+    const videoPicker = createThrowingVideoPicker('boom');
+
+    await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
+      type: 'unexpectedFailure',
+      message: 'Unexpected video picker failure.',
+    });
+  });
+});
