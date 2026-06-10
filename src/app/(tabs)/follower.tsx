@@ -1,33 +1,12 @@
-import { StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { ThemedText } from '@/src/presentation/shared/themed-text';
+import { createFakeFollowerFeed } from '@/src/adapters/fake';
+import { FollowerFeedScreen } from '@/src/presentation/follower';
+
+const demoFollowerFeed = createFakeFollowerFeed();
 
 export default function FollowerRoute() {
-  return (
-    <View style={styles.container}>
-      <ThemedText type="title" style={styles.text}>
-        Follower
-      </ThemedText>
-      <ThemedText style={[styles.description, styles.text]}>
-        Feed browsing is intentionally parked while the walking skeleton focuses on the Creator
-        upload flow.
-      </ThemedText>
-    </View>
-  );
-}
+  const router = useRouter();
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    gap: 16,
-    padding: 24,
-  },
-  description: {
-    maxWidth: 320,
-  },
-  text: {
-    color: '#000',
-  },
-});
+  return <FollowerFeedScreen feedPort={demoFollowerFeed} onExitFlow={() => router.replace('/')} />;
+}

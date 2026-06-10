@@ -1,13 +1,17 @@
 # videomobile
 
-This is a throwaway learning showcase for React Native with Expo. The goal is to learn the Expo development flow while keeping business logic independent from React Native where it makes sense.
+Throwaway React Native with Expo learning showcase.
 
-The app starts with two personas:
+The goal is to demonstrate a senior backend/devops learning path for mobile: keep business logic testable in pure TypeScript, compose React Native screens around use cases, use fake adapters first, and let CI evaluate readiness before native integration work.
 
-- **Creator**: eventually uploads videos into a gallery.
-- **Follower**: eventually browses creator videos in a feed.
+## Current Scope
 
-The current milestone is the walking skeleton: the app boots on Expo SDK 54, renders a persona choice screen, has one pure TypeScript core test, has one React Native screen test, and runs a local/CI quality gate.
+The app has two fake vertical slices:
+
+- **Creator**: pick a fake video, edit a title, validate input, show fake upload progress, complete upload, and return Home.
+- **Follower**: load a fake feed, render video cards, open a fake fullscreen player, support empty/error states, pull-to-refresh with a delayed fake adapter, and return Home.
+
+Both flows are intentionally fake-backed. This lets the presentation, state modeling, and testing strategy be validated before adding Expo media picker, playback, storage, or backend integrations.
 
 ## Commands
 
@@ -37,51 +41,79 @@ npm run typecheck
 npm test
 ```
 
-## Project Structure
+## Architecture
 
-`src/app/` contains the Expo Router entry points and route layout. It is React Native framework glue and should stay focused on navigation and screen composition.
+`src/app/` contains Expo Router route files. This is framework glue: route composition, tab configuration, and wiring fake adapters into screens.
 
-`src/presentation/` contains React Native UI code. The current app-specific component is `PersonaChoiceScreen`, which renders the Creator/Follower choices and delegates business decisions to the domain.
+`src/domain/` contains pure TypeScript state machines and domain types. It must not import React, React Native, Expo, or adapter code.
 
-`src/domain/` contains pure TypeScript domain logic. It must not import React, React Native, or Expo APIs; this is the main TDD surface.
+`src/use-cases/` contains application use cases and ports. Use cases translate adapter results into domain events and keep platform details outside the domain.
 
-`src/application/` is reserved for use cases and ports. This layer will coordinate domain logic with abstract dependencies such as repositories, media pickers, or update services.
+`src/adapters/` contains fake or platform implementations of ports. Current adapters are fake implementations for video picking, video uploading, and follower feed loading/refreshing.
 
-`src/adapters/` is reserved for platform and infrastructure implementations. Expo media picker, haptics, OTA updates, storage, HTTP clients, and fake adapters belong here.
+`src/presentation/` contains React Native screens and presentation hooks. Screens render state, dispatch user intents, and use hooks to run side effects such as loading a feed or uploading a video.
 
-Tests are colocated under each hierarchy's `__tests__` folder. Domain tests stay near domain logic, and presentation tests stay near React Native UI code.
+Tests are colocated under each hierarchy's `__tests__` folder.
 
-`docs/` contains project setup notes. `docs/mac-install.md` records the Mac setup flow, and `docs/dependencies.md` records dependency installation commands.
+## Implemented Flows
 
-`.github/workflows/ci.yml` runs the quality gate on GitHub Actions. It installs dependencies with `npm ci`, then runs lint, typecheck, and tests.
+### Creator
 
-## Configuration
+The Creator flow starts in `picking`, because choosing Creator from Home already means the user entered the Creator upload flow.
 
-`package.json` defines Expo scripts plus `lint`, `typecheck`, `test`, and `ci`. It also configures Jest with `jest-expo` and disables Watchman for stable local and CI runs.
+State handling:
 
-`tsconfig.json` extends Expo's base TypeScript config, enables strict mode, and exposes Jest types for test files.
+- `picking`: render `Create upload` and `Back home`.
+- `editing`: render selected video, title input, validation, and cancel editing.
+- `uploading`: render title, progress, and cancel upload.
+- `uploaded`: render completion and return Home.
+- `failed`: render the failure and return Home.
+- `idle`: internal inactive state; presentation renders no user-facing idle screen and the route exits to Home.
 
-`jest.setup.ts` loads React Native Testing Library matchers. Keep native mocks here when a screen test needs a platform boundary isolated.
+Side effects:
 
-`eslint.config.js` uses Expo's flat ESLint config. The current lint step is intentionally lightweight for the walking skeleton.
+- `pickCreatorVideo` uses a `VideoPickerPort`.
+- `uploadCreatorVideo` uses a `VideoUploaderPort`.
+- `useCreatorUpload` starts the upload when state enters `uploading`, dispatches progress/success/failure events, and aborts when the upload is cancelled or unmounted.
 
-`app.json` stores Expo app configuration. Typed routes are disabled for now so the early skeleton can stay simple; they can be re-enabled once the route map stabilizes.
+### Follower
+
+The Follower flow loads a fake feed when the screen mounts.
+
+State handling:
+
+- `loading`: render loading text.
+- `ready`: render feed cards.
+- `refreshing`: keep feed cards visible while React Native pull-to-refresh shows an activity indicator.
+- `playing`: render a fake fullscreen player frame for the selected feed video.
+- `empty`: render empty state and refresh.
+- `failed`: render error and refresh.
+
+Side effects:
+
+- `loadFollowerFeed` uses a `FollowerFeedPort`.
+- `useFollowerFeed` starts feed loading when state is `loading` or `refreshing`, dispatches loaded/failed events, and aborts when unmounted.
+- `FakeFollowerFeed` returns initial feed data immediately and delays refresh loads for 3 seconds so the presentation can show a realistic pull-to-refresh spinner.
 
 ## Testing Strategy
 
 The core rule is to separate business logic from rendering and platform APIs.
 
-Pure logic belongs in `src/domain` and should be developed test-first. React Native screens should call that logic rather than hiding business decisions inside components.
+Coverage currently includes:
 
-The first core test proves persona selection maps to an application destination. The first screen test proves both persona choices render and that selecting Creator emits the expected destination.
+- Domain reducer tests for Creator and Follower state machines.
+- Use-case tests for picker, upload, and feed loading.
+- Fake adapter tests for upload progress, follower feed data, and delayed follower refresh behavior.
+- React Native screen tests for Creator, Follower, and persona choice presentation.
+- Route tests for Home, Creator, and Follower navigation behavior.
 
-Native behavior such as media picker permissions, video playback, haptics, and OTA updates will need targeted device or E2E validation later. Unit and screen tests do not prove those platform paths.
+Run `npm run ci` before treating a change as ready. The CI script runs lint, typecheck, and Jest.
 
-## Milestone Goals
+## Milestones
 
 ### Milestone 1. Walking Skeleton
 
-Goal: prove the app can boot, render one owned screen, and run the same quality gate locally and in CI.
+Status: complete.
 
 Acceptance criteria:
 
@@ -91,54 +123,70 @@ Acceptance criteria:
 - At least one pure core test passes.
 - At least one screen test passes.
 
-### Milestone 2. Core-First Creator Flow
+### Milestone 2. Fake Creator Flow
 
-Goal: model the Creator upload flow in pure TypeScript before adding real Expo media APIs.
+Status: complete.
 
 Acceptance criteria:
 
-- Upload state is represented in `src/domain`.
+- Creator upload state is represented in `src/domain`.
 - Tests cover selected video, missing title, picker cancellation, upload progress, upload success, upload failure, and upload cancellation.
-- React Native screens render the tested states without owning the business rules.
+- React Native screens render tested states without owning business rules.
 - Media picker and upload behavior use fake adapters first.
 
-### Milestone 3. Follower Flow
+### Milestone 3. Fake Follower Flow
 
-Goal: model the Follower feed and player entry flow while reusing shared video concepts from the Creator side.
+Status: complete.
 
 Acceptance criteria:
 
-- Feed loading, empty, loaded, and error states are represented in core logic.
-- Tests cover refresh success, refresh failure, empty feed, and card selection.
-- A reusable video card component is introduced only when both Creator and Follower screens need it.
-- Player entry is modeled as an intent before native playback is integrated.
+- Feed loading, empty, loaded, and error states are represented in domain logic.
+- Tests cover load success, load failure, empty feed, refresh, delayed pull-to-refresh behavior, and fake player entry/exit.
+- Follower route renders fake feed data through a port-backed adapter.
 
-### Milestone 4. Native Integration Pass
+### Milestone 4. Presentation Polish
+
+Status: next.
+
+Goal: make the app visually consistent and interview-demo friendly before adding native adapter complexity.
+
+Candidate work:
+
+- Introduce shared visual tokens for color, spacing, typography, and cards.
+- Replace placeholder-looking screens with intentional Home, Creator, and Follower layouts.
+- Create reusable button/card components only where duplication is clear.
+- Keep existing tests focused on behavior rather than snapshots.
+
+### Milestone 5. Native Integration Pass
+
+Status: not started.
 
 Goal: replace fake adapters with Expo implementations where the app needs real device behavior.
 
-Acceptance criteria:
+Candidate work:
 
-- Media library permission denied and picker cancel are handled.
-- Video playback is validated on a real device or simulator.
-- Optional haptics are isolated behind an adapter.
-- Known differences between fake adapters and real Expo behavior are documented.
+- Replace fake picker with Expo media picker.
+- Validate media permission denied and picker cancel paths.
+- Replace the fake Follower player frame with native video playback when needed.
+- Document differences between fake adapters and real Expo behavior.
 
-### Milestone 5. OTA Update Demonstration
+### Milestone 6. OTA Update Demonstration
 
-Goal: show Expo OTA delivery with a compatible JS-only cosmetic update.
+Status: not started.
+
+Goal: show Expo OTA delivery with a compatible JS/assets update.
 
 Acceptance criteria:
 
 - `expo-updates` and EAS Update are configured.
 - A preview or internal build receives a JS/assets update.
-- The demo changes a harmless visual token such as background color.
+- The demo changes a harmless visual token such as background color or copy.
 - The README explains that OTA cannot ship arbitrary native changes.
 
-## Milestone 1 Status
+## Docs
 
-- Expo SDK 54 app boots in Expo Go.
-- CI workflow exists.
-- `npm run ci` passes locally.
-- One core test passes.
-- One screen test passes.
+`docs/mac-install.md` records the Mac setup flow.
+
+`docs/dependencies.md` records dependency installation notes.
+
+`docs/testing.md` summarizes the current test strategy and where each kind of test belongs.
