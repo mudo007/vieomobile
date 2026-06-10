@@ -37,17 +37,19 @@ npm run typecheck
 npm test
 ```
 
-## Walking Skeleton
+## Project Structure
 
-`app/` contains the Expo Router entry points and route layout. It should stay focused on navigation and screen composition.
+`src/app/` contains the Expo Router entry points and route layout. It is React Native framework glue and should stay focused on navigation and screen composition.
 
-`components/` contains React Native UI components. The current app-specific component is `PersonaChoiceScreen`, which renders the Creator/Follower choices and delegates business decisions to the core.
+`src/presentation/` contains React Native UI code. The current app-specific component is `PersonaChoiceScreen`, which renders the Creator/Follower choices and delegates business decisions to the domain.
 
-`src/core/` contains pure TypeScript application logic. It must not import React, React Native, or Expo APIs; this is the main TDD surface.
+`src/domain/` contains pure TypeScript domain logic. It must not import React, React Native, or Expo APIs; this is the main TDD surface.
 
-`__tests__/core/` contains fast Node/Jest tests for pure TypeScript behavior. These tests should cover state transitions and business rules before mobile adapters exist.
+`src/application/` is reserved for use cases and ports. This layer will coordinate domain logic with abstract dependencies such as repositories, media pickers, or update services.
 
-`__tests__/screens/` contains React Native Testing Library tests for screen-facing behavior. These tests verify rendered output and user interactions, not native device integration.
+`src/adapters/` is reserved for platform and infrastructure implementations. Expo media picker, haptics, OTA updates, storage, HTTP clients, and fake adapters belong here.
+
+Tests are colocated under each hierarchy's `__tests__` folder. Domain tests stay near domain logic, and presentation tests stay near React Native UI code.
 
 `docs/` contains project setup notes. `docs/mac-install.md` records the Mac setup flow, and `docs/dependencies.md` records dependency installation commands.
 
@@ -69,7 +71,7 @@ npm test
 
 The core rule is to separate business logic from rendering and platform APIs.
 
-Pure logic belongs in `src/core` and should be developed test-first. React Native screens should call that logic rather than hiding business decisions inside components.
+Pure logic belongs in `src/domain` and should be developed test-first. React Native screens should call that logic rather than hiding business decisions inside components.
 
 The first core test proves persona selection maps to an application destination. The first screen test proves both persona choices render and that selecting Creator emits the expected destination.
 
@@ -95,7 +97,7 @@ Goal: model the Creator upload flow in pure TypeScript before adding real Expo m
 
 Acceptance criteria:
 
-- Upload state is represented in `src/core`.
+- Upload state is represented in `src/domain`.
 - Tests cover selected video, missing title, picker cancellation, upload progress, upload success, upload failure, and upload cancellation.
 - React Native screens render the tested states without owning the business rules.
 - Media picker and upload behavior use fake adapters first.

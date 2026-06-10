@@ -1,7 +1,11 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { ThemedText } from '@/components/themed-text';
-import { choosePersona, type Persona, type PersonaDestination } from '@/src/core';
+import {
+  choosePersona,
+  type Persona,
+  type PersonaDestination,
+} from '@/src/domain/persona';
+import { ThemedText } from '@/src/presentation/shared/themed-text';
 
 type PersonaChoiceScreenProps = {
   onChoosePersona?: (persona: Persona, destination: PersonaDestination) => void;

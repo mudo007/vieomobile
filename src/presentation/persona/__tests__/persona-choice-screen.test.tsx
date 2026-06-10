@@ -1,6 +1,6 @@
 import { fireEvent, render } from '@testing-library/react-native';
 
-import { PersonaChoiceScreen } from '@/components/persona-choice-screen';
+import { PersonaChoiceScreen } from '@/src/presentation/persona/persona-choice-screen';
 
 describe('<PersonaChoiceScreen />', () => {
   it('renders both persona choices', async () => {

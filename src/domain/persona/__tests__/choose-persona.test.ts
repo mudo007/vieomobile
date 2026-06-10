@@ -1,4 +1,4 @@
-import { choosePersona } from '@/src/core';
+import { choosePersona } from '@/src/domain/persona';
 
 describe('choosePersona', () => {
   it('routes creators to the gallery', () => {

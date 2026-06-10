@@ -1,9 +1,9 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { IconSymbol } from '@/src/presentation/shared/ui/icon-symbol';
+import { Colors } from '@/src/presentation/theme/theme';
+import { useColorScheme } from '@/src/presentation/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
