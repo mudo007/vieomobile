@@ -179,7 +179,7 @@ Candidate work:
 
 ### Milestone 6. OTA Update Demonstration
 
-Status: not started.
+Status: prepared.
 
 Goal: show Expo OTA delivery with a compatible JS/assets update.
 
@@ -187,8 +187,10 @@ Acceptance criteria:
 
 - `expo-updates` and EAS Update are configured.
 - A preview or internal build receives a JS/assets update.
-- The demo changes a harmless visual token such as background color or copy.
+- The demo changes `APP_DEMO_VERSION` in `src/presentation/shared/app-version.ts`.
 - The README explains that OTA cannot ship arbitrary native changes.
+
+See `docs/ota-updates.md` for the Free-plan setup and demo commands.
 
 ## Docs
 
@@ -197,3 +199,5 @@ Acceptance criteria:
 `docs/dependencies.md` records dependency installation notes.
 
 `docs/testing.md` summarizes the current test strategy and where each kind of test belongs.
+
+`docs/ota-updates.md` explains the EAS Update showcase flow, Free-plan caveats, build channels, and the visible demo-version bump.

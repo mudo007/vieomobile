@@ -29,14 +29,31 @@ Expected packages:
 "jest-expo"
 ```
 
+## OTA dependency
+
+Install `expo-updates` when starting the OTA showcase:
+
+```zsh
+cd /Users/diogoandrade/Repos/videomobile
+
+npx expo install expo-updates
+```
+
+Then configure EAS Update:
+
+```zsh
+eas update:configure
+```
+
+See `docs/ota-updates.md` for the full flow.
+
 ## Future native dependencies
 
-Do not install native Expo modules until the fake vertical slices and presentation design are validated.
+Do not install other native Expo modules until the fake vertical slices, presentation design, and OTA update showcase are validated.
 
 Likely future candidates:
 
 - Expo media picker for the Creator picker adapter.
 - Expo AV or the currently recommended Expo video package for Follower playback.
-- `expo-updates` for the OTA update milestone.
 
 Install those with `npx expo install ...` when the project reaches the native integration pass.

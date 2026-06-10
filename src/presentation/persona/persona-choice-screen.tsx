@@ -7,6 +7,7 @@ import {
   type PersonaDestination,
 } from '@/src/domain/persona';
 import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
+import { APP_DEMO_VERSION } from '@/src/presentation/shared/app-version';
 
 type PersonaChoiceScreenProps = {
   onChoosePersona?: (persona: Persona, destination: PersonaDestination) => void;
@@ -22,7 +23,7 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
       <View style={styles.header}>
         <Text style={styles.brand}>VideoShare</Text>
         <View style={styles.versionPill}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+          <Text style={styles.versionText}>Demo version {APP_DEMO_VERSION}</Text>
         </View>
       </View>
 
