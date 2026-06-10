@@ -80,11 +80,11 @@ export type CreatorUploadEvent =
     message: string;
   }
   | {
-    type: 'selectVideo';
+    type: 'videoSelected';
     video: SelectedVideo;
   }
   | {
-    type: 'rejectUnsupportedVideo';
+    type: 'unsupportedVideoPicked';
     message: string;
     video?: SelectedVideo;
   }
@@ -93,7 +93,13 @@ export type CreatorUploadEvent =
     title: string;
   }
   | {
+    type: 'cancelEditing';
+  }
+  | {
     type: 'confirmUpload';
+  }
+  | {
+    type: 'cancelUpload';
   }
   | {
     type: 'uploadProgressed';

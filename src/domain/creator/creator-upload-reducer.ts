@@ -31,7 +31,7 @@ export function reduceCreatorUpload(
         return { status: 'idle' };
       }
 
-      if (event.type === 'selectVideo') {
+      if (event.type === 'videoSelected') {
         return {
           status: 'editing',
           video: event.video,
@@ -49,7 +49,7 @@ export function reduceCreatorUpload(
         };
       }
 
-      if (event.type === 'rejectUnsupportedVideo') {
+      if (event.type === 'unsupportedVideoPicked') {
         return {
           status: 'failed',
           failure: {
@@ -63,6 +63,10 @@ export function reduceCreatorUpload(
       return state;
 
     case 'editing':
+      if (event.type === 'cancelEditing') {
+        return { status: 'picking' };
+      }
+
       if (event.type === 'changeTitle') {
         return {
           status: 'editing',
@@ -95,6 +99,14 @@ export function reduceCreatorUpload(
       return state;
 
     case 'uploading':
+      if (event.type === 'cancelUpload') {
+        return {
+          status: 'editing',
+          video: state.video,
+          title: state.title,
+        };
+      }
+
       if (event.type === 'uploadProgressed') {
         return {
           ...state,

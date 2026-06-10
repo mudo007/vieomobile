@@ -50,7 +50,7 @@ describe('creator upload reducer', () => {
 
     it('moves to editing when a video is selected', () => {
       expect(
-        reduceCreatorUpload({ status: 'picking' }, { type: 'selectVideo', video: selectedVideo })
+        reduceCreatorUpload({ status: 'picking' }, { type: 'videoSelected', video: selectedVideo })
       ).toEqual({
         status: 'editing',
         video: selectedVideo,
@@ -78,7 +78,7 @@ describe('creator upload reducer', () => {
         reduceCreatorUpload(
           { status: 'picking' },
           {
-            type: 'rejectUnsupportedVideo',
+            type: 'unsupportedVideoPicked',
             message: 'Only local video files are supported.',
             video: selectedVideo,
           }
@@ -137,6 +137,17 @@ describe('creator upload reducer', () => {
       });
     });
 
+    it('returns to picking when editing is cancelled', () => {
+      expect(
+        reduceCreatorUpload(
+          { status: 'editing', video: selectedVideo, title: 'Launch demo' },
+          { type: 'cancelEditing' }
+        )
+      ).toEqual({
+        status: 'picking',
+      });
+    });
+
     it('ignores upload progress before upload starts', () => {
       expect(
         reduceCreatorUpload(editingState, { type: 'uploadProgressed', progress: 0.5 })
@@ -191,6 +202,14 @@ describe('creator upload reducer', () => {
           type: 'uploadFailed',
           message: 'Network request failed.',
         },
+      });
+    });
+
+    it('returns to editing when upload is cancelled', () => {
+      expect(reduceCreatorUpload(uploadingState, { type: 'cancelUpload' })).toEqual({
+        status: 'editing',
+        video: selectedVideo,
+        title: 'Launch demo',
       });
     });
   });
