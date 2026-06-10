@@ -9,3 +9,6 @@ relaunch:
 
 ota-bump:
 	eas update --channel preview
+
+expo-go:
+	npx expo start -c -g --lan

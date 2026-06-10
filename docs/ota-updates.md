@@ -38,6 +38,15 @@ For an iOS simulator build on your Mac:
 eas build --platform ios --profile preview-simulator
 ```
 
+Install and run a finished iOS simulator build:
+
+```zsh
+open -a Simulator
+eas build:run --platform ios
+```
+
+If EAS asks which build to run, select the latest `preview-simulator` build.
+
 For a physical iPhone, you need Apple ad hoc provisioning, which requires a paid Apple Developer account:
 
 ```zsh
@@ -76,7 +85,26 @@ npm run ci
 eas update --channel preview --message "Bump demo version to 1.0.1"
 ```
 
-Force close and reopen the installed preview app. If the label does not change on the first reopen, close and reopen once more; the default update behavior can download on one launch and apply on the next reload.
+Force close and reopen the installed preview app. On the iOS Simulator, use:
+
+```zsh
+xcrun simctl terminate booted com.mudo007.videomobileexposcaffoldsdk54
+xcrun simctl launch booted com.mudo007.videomobileexposcaffoldsdk54
+```
+
+Or restart it in one command:
+
+```zsh
+xcrun simctl launch --terminate-running-process booted com.mudo007.videomobileexposcaffoldsdk54
+```
+
+If the label does not change on the first reopen, close and reopen once more. This is expected: the default update behavior can download the update on one launch and apply it on the next launch.
+
+To confirm the installed app bundle identifier:
+
+```zsh
+xcrun simctl listapps booted | rg CFBundleIdentifier
+```
 
 ## What The Commands Do
 
