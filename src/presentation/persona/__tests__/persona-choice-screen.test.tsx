@@ -10,7 +10,7 @@ describe('<PersonaChoiceScreen />', () => {
     // Then
     expect(getByText('Creator')).toBeTruthy();
     expect(getByText('Follower')).toBeTruthy();
-    expect(getByText('Demo version 1.0.0')).toBeTruthy();
+    expect(getByText(/^Demo version \d+\.\d+\.\d+$/)).toBeTruthy();
   });
 
   it('emits the selected persona and destination', async () => {
