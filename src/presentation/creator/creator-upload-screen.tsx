@@ -7,16 +7,19 @@ import {
   type CreatorUploadEvent,
   type CreatorUploadState,
 } from '@/src/domain/creator';
-import { pickCreatorVideo, type VideoPickerPort } from '@/src/use-cases/creator';
+import { pickCreatorVideo, type VideoPickerPort, type VideoUploaderPort } from '@/src/use-cases/creator';
+import { useCreatorUpload } from './use-creator-upload';
 
 export type CreatorUploadScreenProps = {
   videoPicker: VideoPickerPort;
+  videoUploader: VideoUploaderPort;
   initialState?: CreatorUploadState;
   onExitFlow?: () => void;
 };
 
 export function CreatorUploadScreen({
   videoPicker,
+  videoUploader,
   initialState,
   onExitFlow,
 }: CreatorUploadScreenProps) {
@@ -25,6 +28,12 @@ export function CreatorUploadScreen({
     initialState ?? initialCreatorUploadState
   );
   const previousStatus = useRef(state.status);
+
+  useCreatorUpload({
+    state,
+    videoUploader,
+    dispatch,
+  });
 
   useEffect(() => {
     const transitionedToIdle = previousStatus.current !== 'idle' && state.status === 'idle';

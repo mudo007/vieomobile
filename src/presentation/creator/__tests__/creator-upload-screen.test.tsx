@@ -1,4 +1,4 @@
-import { fireEvent, render, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 
 import {
   createFakeVideoPicker,
@@ -6,7 +6,11 @@ import {
 } from '@/src/adapters/fake';
 import type { CreatorUploadState, SelectedVideo, UploadedVideo } from '@/src/domain/creator';
 import { CreatorUploadScreen } from '@/src/presentation/creator';
-import type { PickCreatorVideoResult } from '@/src/use-cases/creator';
+import type {
+  PickCreatorVideoResult,
+  UploadCreatorVideoInput,
+  VideoUploaderPort,
+} from '@/src/use-cases/creator';
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
@@ -24,12 +28,14 @@ const uploadedVideo: UploadedVideo = {
 async function renderWithPickerResult(
   result: PickCreatorVideoResult,
   initialState: CreatorUploadState = { status: 'picking' },
-  onExitFlow?: () => void
+  onExitFlow?: () => void,
+  videoUploader: VideoUploaderPort = createPendingVideoUploader()
 ) {
   const videoPicker = createFakeVideoPicker(result);
   const screen = await render(
     <CreatorUploadScreen
       videoPicker={videoPicker}
+      videoUploader={videoUploader}
       initialState={initialState}
       onExitFlow={onExitFlow}
     />
@@ -43,11 +49,16 @@ async function renderWithPickerResult(
 
 async function renderWithThrowingPicker(
   error: unknown,
-  initialState: CreatorUploadState = { status: 'picking' }
+  initialState: CreatorUploadState = { status: 'picking' },
+  videoUploader: VideoUploaderPort = createPendingVideoUploader()
 ) {
   const videoPicker = createThrowingFakeVideoPicker(error);
   const screen = await render(
-    <CreatorUploadScreen videoPicker={videoPicker} initialState={initialState} />
+    <CreatorUploadScreen
+      videoPicker={videoPicker}
+      videoUploader={videoUploader}
+      initialState={initialState}
+    />
   );
 
   return {
@@ -58,6 +69,41 @@ async function renderWithThrowingPicker(
 
 async function press(element: Parameters<typeof fireEvent.press>[0]) {
   await fireEvent.press(element);
+}
+
+function createPendingVideoUploader(): VideoUploaderPort {
+  return {
+    uploadCreatorVideo: jest.fn(() => new Promise<UploadedVideo>(() => undefined)),
+  };
+}
+
+function createManualVideoUploader() {
+  let uploadInput: UploadCreatorVideoInput | null = null;
+  let resolveUpload: (uploadedVideo: UploadedVideo) => void = () => undefined;
+
+  const uploadPromise = new Promise<UploadedVideo>((resolve) => {
+    resolveUpload = resolve;
+  });
+
+  const videoUploader: VideoUploaderPort = {
+    uploadCreatorVideo: jest.fn((input) => {
+      uploadInput = input;
+      return uploadPromise;
+    }),
+  };
+
+  return {
+    videoUploader,
+    get signal() {
+      return uploadInput?.signal;
+    },
+    progress(progress: number) {
+      uploadInput?.onProgress(progress);
+    },
+    succeed(nextUploadedVideo: UploadedVideo) {
+      resolveUpload(nextUploadedVideo);
+    },
+  };
 }
 
 describe('<CreatorUploadScreen />', () => {
@@ -212,6 +258,41 @@ describe('<CreatorUploadScreen />', () => {
     expect(await findByText('Cancel upload')).toBeTruthy();
   });
 
+  it('renders uploader progress and completion after upload starts', async () => {
+    // Given
+    const manualUploader = createManualVideoUploader();
+    const { findByPlaceholderText, findByText, getByText } = await renderWithPickerResult(
+      {
+        type: 'videoSelected',
+        video: selectedVideo,
+      },
+      { status: 'picking' },
+      undefined,
+      manualUploader.videoUploader
+    );
+
+    // When
+    await press(getByText('Create upload'));
+    const titleInput = await findByPlaceholderText('Video title');
+    await fireEvent.changeText(titleInput, 'Launch demo');
+    await press(getByText('Confirm upload'));
+    await findByText('Progress: 0%');
+    await act(async () => {
+      manualUploader.progress(0.5);
+    });
+
+    // Then
+    expect(await findByText('Progress: 50%')).toBeTruthy();
+
+    // When
+    await act(async () => {
+      manualUploader.succeed(uploadedVideo);
+    });
+
+    // Then
+    expect(await findByText('Upload complete')).toBeTruthy();
+  });
+
   it('returns to picking when editing is cancelled', async () => {
     // Given
     const editingState: CreatorUploadState = {
@@ -240,14 +321,22 @@ describe('<CreatorUploadScreen />', () => {
       title: 'Launch demo',
       progress: 0.4,
     };
-    const { getByText } = await renderWithPickerResult({ type: 'cancelled' }, uploadingState);
+    const manualUploader = createManualVideoUploader();
+    const { getByText } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      uploadingState,
+      undefined,
+      manualUploader.videoUploader
+    );
 
     // When
+    await waitFor(() => expect(manualUploader.signal).toBeDefined());
     await press(getByText('Cancel upload'));
 
     // Then
     await waitFor(() => expect(getByText('video.mov')).toBeTruthy());
     expect(getByText('Confirm upload')).toBeTruthy();
+    expect(manualUploader.signal?.aborted).toBe(true);
   });
 
   it('notifies the route when uploaded state resets to idle', async () => {
