@@ -12,9 +12,14 @@ import { pickCreatorVideo, type VideoPickerPort } from '@/src/use-cases/creator'
 export type CreatorUploadScreenProps = {
   videoPicker: VideoPickerPort;
   initialState?: CreatorUploadState;
+  onExitFlow?: () => void;
 };
 
-export function CreatorUploadScreen({ videoPicker, initialState }: CreatorUploadScreenProps) {
+export function CreatorUploadScreen({
+  videoPicker,
+  initialState,
+  onExitFlow,
+}: CreatorUploadScreenProps) {
   const [state, dispatch] = useReducer(
     reduceCreatorUpload,
     initialState ?? initialCreatorUploadState
@@ -28,6 +33,10 @@ export function CreatorUploadScreen({ videoPicker, initialState }: CreatorUpload
 
     if (event) {
       dispatch(event);
+
+      if (event.type === 'cancelPicking') {
+        onExitFlow?.();
+      }
     }
   };
 
@@ -38,7 +47,7 @@ export function CreatorUploadScreen({ videoPicker, initialState }: CreatorUpload
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Creator</Text>
-      {renderCreatorUploadState(state, handleCreateUpload, handleDispatch)}
+      {renderCreatorUploadState(state, handleCreateUpload, handleDispatch, onExitFlow)}
     </View>
   );
 }
@@ -46,14 +55,28 @@ export function CreatorUploadScreen({ videoPicker, initialState }: CreatorUpload
 function renderCreatorUploadState(
   state: CreatorUploadState,
   onCreateUpload: () => void,
-  dispatch: (event: CreatorUploadEvent) => void
+  dispatch: (event: CreatorUploadEvent) => void,
+  onExitFlow: (() => void) | undefined
 ) {
   switch (state.status) {
     case 'idle':
       return (
-        <Pressable accessibilityRole="button" onPress={onCreateUpload} style={styles.primaryButton}>
-          <Text style={styles.primaryButtonText}>Create upload</Text>
-        </Pressable>
+        <View style={styles.section}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onCreateUpload}
+            style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Create upload</Text>
+          </Pressable>
+          {onExitFlow ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={onExitFlow}
+              style={styles.secondaryButton}>
+              <Text>Back home</Text>
+            </Pressable>
+          ) : null}
+        </View>
       );
 
     case 'picking':
@@ -135,6 +158,7 @@ function getVideoLabel(fileName: string | undefined): string {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     gap: 24,
     padding: 24,

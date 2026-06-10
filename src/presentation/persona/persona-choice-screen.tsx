@@ -47,6 +47,7 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     gap: 24,
     padding: 24,

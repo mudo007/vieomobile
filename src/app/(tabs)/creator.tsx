@@ -1,3 +1,5 @@
+import { useRouter } from 'expo-router';
+
 import { createFakeVideoPicker } from '@/src/adapters/fake';
 import { CreatorUploadScreen } from '@/src/presentation/creator';
 
@@ -11,5 +13,9 @@ const demoVideoPicker = createFakeVideoPicker({
 });
 
 export default function CreatorRoute() {
-  return <CreatorUploadScreen videoPicker={demoVideoPicker} />;
+  const router = useRouter();
+
+  return (
+    <CreatorUploadScreen videoPicker={demoVideoPicker} onExitFlow={() => router.replace('/')} />
+  );
 }

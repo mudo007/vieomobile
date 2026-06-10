@@ -23,11 +23,16 @@ const uploadedVideo: UploadedVideo = {
 // Every test will need a picker result and a rendered Upload Screen, so we create a helper to reduce boilerplate in the tests.
 async function renderWithPickerResult(
   result: PickCreatorVideoResult,
-  initialState?: CreatorUploadState
+  initialState?: CreatorUploadState,
+  onExitFlow?: () => void
 ) {
   const videoPicker = createFakeVideoPicker(result);
   const screen = await render(
-    <CreatorUploadScreen videoPicker={videoPicker} initialState={initialState} />
+    <CreatorUploadScreen
+      videoPicker={videoPicker}
+      initialState={initialState}
+      onExitFlow={onExitFlow}
+    />
   );
 
   return {
@@ -92,6 +97,38 @@ describe('<CreatorUploadScreen />', () => {
     expect(queryByText('Confirm upload')).toBeNull();
     expect(queryByText('Title is required.')).toBeNull();
     expect(videoPicker.pickVideoCallCount).toBe(1);
+  });
+
+  it('notifies the route when the picker cancellation exits the flow', async () => {
+    // Given
+    const onExitFlow = jest.fn();
+    const { getByText } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      undefined,
+      onExitFlow
+    );
+
+    // When
+    await press(getByText('Create upload'));
+
+    // Then
+    expect(onExitFlow).toHaveBeenCalledTimes(1);
+  });
+
+  it('notifies the route when the user exits from the idle state', async () => {
+    // Given
+    const onExitFlow = jest.fn();
+    const { getByText } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      undefined,
+      onExitFlow
+    );
+
+    // When
+    await press(getByText('Back home'));
+
+    // Then
+    expect(onExitFlow).toHaveBeenCalledTimes(1);
   });
 
   it('renders a permission error when media access is denied', async () => {
