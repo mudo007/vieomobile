@@ -48,6 +48,10 @@ async function renderWithThrowingPicker(error: unknown, initialState?: CreatorUp
   };
 }
 
+async function press(element: Parameters<typeof fireEvent.press>[0]) {
+  await fireEvent.press(element);
+}
+
 describe('<CreatorUploadScreen />', () => {
   it('renders the idle upload action', async () => {
     // Given / When
@@ -65,7 +69,7 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
 
     // Then
     expect(await findByText('video.mov')).toBeTruthy();
@@ -80,10 +84,11 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
 
     // Then
-    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
+    await waitFor(() => expect(videoPicker.pickVideoCallCount).toBe(1));
+    expect(getByText('Create upload')).toBeTruthy();
     expect(queryByText('Confirm upload')).toBeNull();
     expect(queryByText('Title is required.')).toBeNull();
     expect(videoPicker.pickVideoCallCount).toBe(1);
@@ -97,7 +102,7 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
 
     // Then
     expect(await findByText('Media library access is required.')).toBeTruthy();
@@ -113,7 +118,7 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
 
     // Then
     expect(await findByText('Only local video files are supported.')).toBeTruthy();
@@ -126,7 +131,7 @@ describe('<CreatorUploadScreen />', () => {
     );
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
 
     // Then
     expect(await findByText('Native picker crashed.')).toBeTruthy();
@@ -140,9 +145,9 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
     await findByText('Confirm upload');
-    fireEvent.press(getByText('Confirm upload'));
+    await press(getByText('Confirm upload'));
 
     // Then
     expect(await findByText('Title is required.')).toBeTruthy();
@@ -156,10 +161,10 @@ describe('<CreatorUploadScreen />', () => {
     });
 
     // When
-    fireEvent.press(getByText('Create upload'));
+    await press(getByText('Create upload'));
     const titleInput = await findByPlaceholderText('Video title');
-    fireEvent.changeText(titleInput, 'Launch demo');
-    fireEvent.press(getByText('Confirm upload'));
+    await fireEvent.changeText(titleInput, 'Launch demo');
+    await press(getByText('Confirm upload'));
 
     // Then
     expect(await findByText('Uploading Launch demo')).toBeTruthy();
@@ -180,11 +185,11 @@ describe('<CreatorUploadScreen />', () => {
     );
 
     // When
-    fireEvent.press(getByText('Cancel editing'));
+    await press(getByText('Cancel editing'));
 
     // Then
+    await waitFor(() => expect(getByText('Picking video...')).toBeTruthy());
     expect(queryByText('Launch demo')).toBeNull();
-    expect(getByText('Picking video...')).toBeTruthy();
   });
 
   it('returns to editing when upload is cancelled', async () => {
@@ -198,10 +203,10 @@ describe('<CreatorUploadScreen />', () => {
     const { getByText } = await renderWithPickerResult({ type: 'cancelled' }, uploadingState);
 
     // When
-    fireEvent.press(getByText('Cancel upload'));
+    await press(getByText('Cancel upload'));
 
     // Then
-    expect(getByText('video.mov')).toBeTruthy();
+    await waitFor(() => expect(getByText('video.mov')).toBeTruthy());
     expect(getByText('Confirm upload')).toBeTruthy();
   });
 
@@ -215,10 +220,10 @@ describe('<CreatorUploadScreen />', () => {
 
     // When
     expect(getByText('Upload complete')).toBeTruthy();
-    fireEvent.press(getByText('Create another'));
+    await press(getByText('Create another'));
 
     // Then
-    expect(getByText('Create upload')).toBeTruthy();
+    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
   });
 
   it('resets to idle from failed state', async () => {
@@ -234,9 +239,9 @@ describe('<CreatorUploadScreen />', () => {
 
     // When
     expect(getByText('Network request failed.')).toBeTruthy();
-    fireEvent.press(getByText('Try again'));
+    await press(getByText('Try again'));
 
     // Then
-    expect(getByText('Create upload')).toBeTruthy();
+    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
   });
 });
