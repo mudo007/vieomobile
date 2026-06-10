@@ -75,6 +75,64 @@ The first core test proves persona selection maps to an application destination.
 
 Native behavior such as media picker permissions, video playback, haptics, and OTA updates will need targeted device or E2E validation later. Unit and screen tests do not prove those platform paths.
 
+## Milestone Goals
+
+### Milestone 1. Walking Skeleton
+
+Goal: prove the app can boot, render one owned screen, and run the same quality gate locally and in CI.
+
+Acceptance criteria:
+
+- Expo SDK 54 app runs in Expo Go.
+- TypeScript, linting, Jest, and React Native Testing Library are configured.
+- `npm run ci` runs lint, typecheck, and tests.
+- At least one pure core test passes.
+- At least one screen test passes.
+
+### Milestone 2. Core-First Creator Flow
+
+Goal: model the Creator upload flow in pure TypeScript before adding real Expo media APIs.
+
+Acceptance criteria:
+
+- Upload state is represented in `src/core`.
+- Tests cover selected video, missing title, picker cancellation, upload progress, upload success, upload failure, and upload cancellation.
+- React Native screens render the tested states without owning the business rules.
+- Media picker and upload behavior use fake adapters first.
+
+### Milestone 3. Follower Flow
+
+Goal: model the Follower feed and player entry flow while reusing shared video concepts from the Creator side.
+
+Acceptance criteria:
+
+- Feed loading, empty, loaded, and error states are represented in core logic.
+- Tests cover refresh success, refresh failure, empty feed, and card selection.
+- A reusable video card component is introduced only when both Creator and Follower screens need it.
+- Player entry is modeled as an intent before native playback is integrated.
+
+### Milestone 4. Native Integration Pass
+
+Goal: replace fake adapters with Expo implementations where the app needs real device behavior.
+
+Acceptance criteria:
+
+- Media library permission denied and picker cancel are handled.
+- Video playback is validated on a real device or simulator.
+- Optional haptics are isolated behind an adapter.
+- Known differences between fake adapters and real Expo behavior are documented.
+
+### Milestone 5. OTA Update Demonstration
+
+Goal: show Expo OTA delivery with a compatible JS-only cosmetic update.
+
+Acceptance criteria:
+
+- `expo-updates` and EAS Update are configured.
+- A preview or internal build receives a JS/assets update.
+- The demo changes a harmless visual token such as background color.
+- The README explains that OTA cannot ship arbitrary native changes.
+
 ## Milestone 1 Status
 
 - Expo SDK 54 app boots in Expo Go.
