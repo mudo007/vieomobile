@@ -5,8 +5,10 @@ import { ThemedText } from '@/src/presentation/shared/themed-text';
 export default function FollowerRoute() {
   return (
     <View style={styles.container}>
-      <ThemedText type="title">Follower</ThemedText>
-      <ThemedText style={styles.description}>
+      <ThemedText type="title" style={styles.text}>
+        Follower
+      </ThemedText>
+      <ThemedText style={[styles.description, styles.text]}>
         Feed browsing is intentionally parked while the walking skeleton focuses on the Creator
         upload flow.
       </ThemedText>
@@ -24,5 +26,8 @@ const styles = StyleSheet.create({
   },
   description: {
     maxWidth: 320,
+  },
+  text: {
+    color: '#000',
   },
 });

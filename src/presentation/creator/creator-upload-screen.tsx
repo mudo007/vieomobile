@@ -1,4 +1,4 @@
-import { useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import {
@@ -24,19 +24,27 @@ export function CreatorUploadScreen({
     reduceCreatorUpload,
     initialState ?? initialCreatorUploadState
   );
+  const previousStatus = useRef(state.status);
 
-  const handleCreateUpload = async () => {
-    const pickingState: CreatorUploadState = { status: 'picking' };
-    dispatch({ type: 'startPicking' });
+  useEffect(() => {
+    const transitionedToIdle = previousStatus.current !== 'idle' && state.status === 'idle';
 
-    const event = await pickCreatorVideo(pickingState, { videoPicker });
+    previousStatus.current = state.status;
+
+    if (transitionedToIdle) {
+      onExitFlow?.();
+    }
+  }, [onExitFlow, state.status]);
+
+  const handlePickVideo = async () => {
+    if (state.status !== 'picking') {
+      return;
+    }
+
+    const event = await pickCreatorVideo(state, { videoPicker });
 
     if (event) {
       dispatch(event);
-
-      if (event.type === 'cancelPicking') {
-        onExitFlow?.();
-      }
     }
   };
 
@@ -47,40 +55,37 @@ export function CreatorUploadScreen({
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Creator</Text>
-      {renderCreatorUploadState(state, handleCreateUpload, handleDispatch, onExitFlow)}
+      {renderCreatorUploadState(state, handlePickVideo, handleDispatch, onExitFlow)}
     </View>
   );
 }
 
 function renderCreatorUploadState(
   state: CreatorUploadState,
-  onCreateUpload: () => void,
+  onPickVideo: () => void,
   dispatch: (event: CreatorUploadEvent) => void,
   onExitFlow: (() => void) | undefined
 ) {
   switch (state.status) {
     case 'idle':
+      return null;
+
+    case 'picking':
       return (
         <View style={styles.section}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onCreateUpload}
-            style={styles.primaryButton}>
+          <Pressable accessibilityRole="button" onPress={onPickVideo} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Create upload</Text>
           </Pressable>
           {onExitFlow ? (
             <Pressable
               accessibilityRole="button"
-              onPress={onExitFlow}
+              onPress={() => dispatch({ type: 'cancelPicking' })}
               style={styles.secondaryButton}>
               <Text>Back home</Text>
             </Pressable>
           ) : null}
         </View>
       );
-
-    case 'picking':
-      return <Text>Picking video...</Text>;
 
     case 'editing':
       return (
@@ -131,7 +136,7 @@ function renderCreatorUploadState(
             accessibilityRole="button"
             onPress={() => dispatch({ type: 'reset' })}
             style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Create another</Text>
+            <Text style={styles.primaryButtonText}>Back home</Text>
           </Pressable>
         </View>
       );
@@ -144,7 +149,7 @@ function renderCreatorUploadState(
             accessibilityRole="button"
             onPress={() => dispatch({ type: 'reset' })}
             style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Try again</Text>
+            <Text style={styles.primaryButtonText}>Back home</Text>
           </Pressable>
         </View>
       );

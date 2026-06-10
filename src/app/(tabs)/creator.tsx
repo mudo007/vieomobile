@@ -1,6 +1,8 @@
-import { useRouter } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 import { createFakeVideoPicker } from '@/src/adapters/fake';
+import type { CreatorUploadState } from '@/src/domain/creator';
 import { CreatorUploadScreen } from '@/src/presentation/creator';
 
 const demoVideoPicker = createFakeVideoPicker({
@@ -12,10 +14,26 @@ const demoVideoPicker = createFakeVideoPicker({
   },
 });
 
+const initialCreatorRouteState: CreatorUploadState = {
+  status: 'picking',
+};
+
 export default function CreatorRoute() {
   const router = useRouter();
+  const [sessionKey, setSessionKey] = useState(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      setSessionKey((currentSessionKey) => currentSessionKey + 1);
+    }, [])
+  );
 
   return (
-    <CreatorUploadScreen videoPicker={demoVideoPicker} onExitFlow={() => router.replace('/')} />
+    <CreatorUploadScreen
+      key={sessionKey}
+      videoPicker={demoVideoPicker}
+      initialState={initialCreatorRouteState}
+      onExitFlow={() => router.replace('/')}
+    />
   );
 }

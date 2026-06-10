@@ -23,7 +23,7 @@ const uploadedVideo: UploadedVideo = {
 // Every test will need a picker result and a rendered Upload Screen, so we create a helper to reduce boilerplate in the tests.
 async function renderWithPickerResult(
   result: PickCreatorVideoResult,
-  initialState?: CreatorUploadState,
+  initialState: CreatorUploadState = { status: 'picking' },
   onExitFlow?: () => void
 ) {
   const videoPicker = createFakeVideoPicker(result);
@@ -41,7 +41,10 @@ async function renderWithPickerResult(
   };
 }
 
-async function renderWithThrowingPicker(error: unknown, initialState?: CreatorUploadState) {
+async function renderWithThrowingPicker(
+  error: unknown,
+  initialState: CreatorUploadState = { status: 'picking' }
+) {
   const videoPicker = createThrowingFakeVideoPicker(error);
   const screen = await render(
     <CreatorUploadScreen videoPicker={videoPicker} initialState={initialState} />
@@ -58,7 +61,7 @@ async function press(element: Parameters<typeof fireEvent.press>[0]) {
 }
 
 describe('<CreatorUploadScreen />', () => {
-  it('renders the idle upload action', async () => {
+  it('renders the picking upload action', async () => {
     // Given / When
     const { getByText } = await renderWithPickerResult({ type: 'cancelled' });
 
@@ -82,7 +85,7 @@ describe('<CreatorUploadScreen />', () => {
     expect(videoPicker.pickVideoCallCount).toBe(1);
   });
 
-  it('returns to idle when the picker reports cancellation', async () => {
+  it('transitions away from the picking action when the picker reports cancellation', async () => {
     // Given
     const { getByText, queryByText, videoPicker } = await renderWithPickerResult({
       type: 'cancelled',
@@ -93,7 +96,7 @@ describe('<CreatorUploadScreen />', () => {
 
     // Then
     await waitFor(() => expect(videoPicker.pickVideoCallCount).toBe(1));
-    expect(getByText('Create upload')).toBeTruthy();
+    expect(queryByText('Create upload')).toBeNull();
     expect(queryByText('Confirm upload')).toBeNull();
     expect(queryByText('Title is required.')).toBeNull();
     expect(videoPicker.pickVideoCallCount).toBe(1);
@@ -104,7 +107,7 @@ describe('<CreatorUploadScreen />', () => {
     const onExitFlow = jest.fn();
     const { getByText } = await renderWithPickerResult(
       { type: 'cancelled' },
-      undefined,
+      { status: 'picking' },
       onExitFlow
     );
 
@@ -115,12 +118,12 @@ describe('<CreatorUploadScreen />', () => {
     expect(onExitFlow).toHaveBeenCalledTimes(1);
   });
 
-  it('notifies the route when the user exits from the idle state', async () => {
+  it('notifies the route when the user exits from the picking state', async () => {
     // Given
     const onExitFlow = jest.fn();
     const { getByText } = await renderWithPickerResult(
       { type: 'cancelled' },
-      undefined,
+      { status: 'picking' },
       onExitFlow
     );
 
@@ -143,7 +146,7 @@ describe('<CreatorUploadScreen />', () => {
 
     // Then
     expect(await findByText('Media library access is required.')).toBeTruthy();
-    expect(await findByText('Try again')).toBeTruthy();
+    expect(await findByText('Back home')).toBeTruthy();
   });
 
   it('renders an unsupported video error when the picked video is not usable', async () => {
@@ -225,7 +228,7 @@ describe('<CreatorUploadScreen />', () => {
     await press(getByText('Cancel editing'));
 
     // Then
-    await waitFor(() => expect(getByText('Picking video...')).toBeTruthy());
+    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
     expect(queryByText('Launch demo')).toBeNull();
   });
 
@@ -247,24 +250,30 @@ describe('<CreatorUploadScreen />', () => {
     expect(getByText('Confirm upload')).toBeTruthy();
   });
 
-  it('resets to idle from uploaded state', async () => {
+  it('notifies the route when uploaded state resets to idle', async () => {
     // Given
+    const onExitFlow = jest.fn();
     const uploadedState: CreatorUploadState = {
       status: 'uploaded',
       uploadedVideo,
     };
-    const { getByText } = await renderWithPickerResult({ type: 'cancelled' }, uploadedState);
+    const { getByText } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      uploadedState,
+      onExitFlow
+    );
 
     // When
     expect(getByText('Upload complete')).toBeTruthy();
-    await press(getByText('Create another'));
+    await press(getByText('Back home'));
 
     // Then
-    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
+    await waitFor(() => expect(onExitFlow).toHaveBeenCalledTimes(1));
   });
 
-  it('resets to idle from failed state', async () => {
+  it('notifies the route when failed state resets to idle', async () => {
     // Given
+    const onExitFlow = jest.fn();
     const failedState: CreatorUploadState = {
       status: 'failed',
       failure: {
@@ -272,13 +281,17 @@ describe('<CreatorUploadScreen />', () => {
         message: 'Network request failed.',
       },
     };
-    const { getByText } = await renderWithPickerResult({ type: 'cancelled' }, failedState);
+    const { getByText } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      failedState,
+      onExitFlow
+    );
 
     // When
     expect(getByText('Network request failed.')).toBeTruthy();
-    await press(getByText('Try again'));
+    await press(getByText('Back home'));
 
     // Then
-    await waitFor(() => expect(getByText('Create upload')).toBeTruthy());
+    await waitFor(() => expect(onExitFlow).toHaveBeenCalledTimes(1));
   });
 });

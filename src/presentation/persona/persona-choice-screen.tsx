@@ -18,8 +18,10 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
 
   return (
     <View style={styles.container}>
-      <ThemedText type="title">Video Mobile</ThemedText>
-      <ThemedText style={styles.description}>
+      <ThemedText type="title" style={styles.text}>
+        Video Mobile
+      </ThemedText>
+      <ThemedText style={[styles.description, styles.text]}>
         Choose a mode to enter the app skeleton.
       </ThemedText>
 
@@ -28,16 +30,20 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
           accessibilityRole="button"
           onPress={() => handleChoose('creator')}
           style={styles.card}>
-          <ThemedText type="subtitle">Creator</ThemedText>
-          <ThemedText>Upload videos into a gallery.</ThemedText>
+          <ThemedText type="subtitle" style={styles.text}>
+            Creator
+          </ThemedText>
+          <ThemedText style={styles.text}>Upload videos into a gallery.</ThemedText>
         </Pressable>
 
         <Pressable
           accessibilityRole="button"
           onPress={() => handleChoose('follower')}
           style={styles.card}>
-          <ThemedText type="subtitle">Follower</ThemedText>
-          <ThemedText>Browse creator videos in a feed.</ThemedText>
+          <ThemedText type="subtitle" style={styles.text}>
+            Follower
+          </ThemedText>
+          <ThemedText style={styles.text}>Browse creator videos in a feed.</ThemedText>
         </Pressable>
       </View>
     </View>
@@ -54,6 +60,9 @@ const styles = StyleSheet.create({
   },
   description: {
     maxWidth: 320,
+  },
+  text: {
+    color: '#000',
   },
   actions: {
     gap: 12,
