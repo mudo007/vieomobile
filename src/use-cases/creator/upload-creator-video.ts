@@ -1,8 +1,10 @@
 import type { CreatorUploadEvent, CreatorUploadState } from '@/src/domain/creator';
+import type { UploadedVideoRepositoryPort } from './uploaded-video-repository-port';
 import type { VideoUploaderPort } from './video-uploader-port';
 
 type UploadCreatorVideoPorts = {
   videoUploader: VideoUploaderPort;
+  uploadedVideos?: UploadedVideoRepositoryPort;
   onProgressEvent: (event: CreatorUploadEvent) => void;
 };
 
@@ -16,7 +18,7 @@ export async function uploadCreatorVideo(
   }
 
   try {
-    const uploadedVideo = await ports.videoUploader.uploadCreatorVideo({
+    let uploadedVideo = await ports.videoUploader.uploadCreatorVideo({
       video: state.video,
       title: state.title,
       signal,
@@ -29,6 +31,15 @@ export async function uploadCreatorVideo(
 
     if (signal.aborted) {
       return null;
+    }
+
+    if (ports.uploadedVideos) {
+      uploadedVideo = await ports.uploadedVideos.saveUploadedVideo({
+        uploadedVideo,
+        video: state.video,
+        title: state.title,
+        description: state.description,
+      });
     }
 
     return {

@@ -172,8 +172,9 @@ Goal: replace fake adapters with Expo implementations where the app needs real d
 
 Candidate work:
 
-- Replace fake picker with Expo media picker.
+- Replace fake picker with Expo media picker. Creator-side picker plumbing is implemented.
 - Validate media permission denied and picker cancel paths.
+- Reject duplicate media selections after the system picker returns, using the `duplicateFound` Creator state.
 - Replace the fake Follower player frame with native video playback when needed.
 - Document differences between fake adapters and real Expo behavior.
 
@@ -201,3 +202,7 @@ See `docs/ota-updates.md` for the Free-plan setup and demo commands.
 `docs/testing.md` summarizes the current test strategy and where each kind of test belongs.
 
 `docs/ota-updates.md` explains the EAS Update showcase flow, Free-plan caveats, build channels, and the visible demo-version bump.
+
+`docs/data-layer.md` records the URI-pointer video strategy, duplicate detection rule, and planned in-memory repository shape.
+
+`docs/expo-libraries.md` records which Expo native libraries are used now, which are deferred, and how they affect OTA boundaries.

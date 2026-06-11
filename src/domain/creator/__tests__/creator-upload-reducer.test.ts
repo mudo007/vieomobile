@@ -8,10 +8,20 @@ import {
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
+  assetId: 'asset-video-1',
   fileName: 'video.mov',
   mimeType: 'video/quicktime',
   durationMs: 12_000,
   sizeBytes: 42_000_000,
+};
+
+const secondVideo: SelectedVideo = {
+  uri: 'file:///creator/second-video.mov',
+  assetId: 'asset-video-2',
+  fileName: 'second-video.mov',
+  mimeType: 'video/quicktime',
+  durationMs: 8_000,
+  sizeBytes: 24_000_000,
 };
 
 const uploadedVideo: UploadedVideo = {
@@ -66,6 +76,19 @@ describe('creator upload reducer', () => {
       });
     });
 
+    it('stays picking when the system picker is dismissed', () => {
+      // Given
+      const state: CreatorUploadState = { status: 'picking' };
+
+      // When
+      const nextState = reduceCreatorUpload(state, { type: 'stayPicking' });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'picking',
+      });
+    });
+
     it('moves to editing when a video is selected', () => {
       // Given
       const state: CreatorUploadState = { status: 'picking' };
@@ -82,6 +105,25 @@ describe('creator upload reducer', () => {
         video: selectedVideo,
         title: '',
         description: '',
+      });
+    });
+
+    it('moves to duplicate found when the selected video already exists', () => {
+      // Given
+      const state: CreatorUploadState = { status: 'picking' };
+
+      // When
+      const nextState = reduceCreatorUpload(state, {
+        type: 'duplicateVideoPicked',
+        video: selectedVideo,
+        message: 'This video is already in your feed.',
+      });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'duplicateFound',
+        video: selectedVideo,
+        message: 'This video is already in your feed.',
       });
     });
 
@@ -125,6 +167,116 @@ describe('creator upload reducer', () => {
           video: selectedVideo,
         },
       });
+    });
+  });
+
+  describe('duplicate found state', () => {
+    const duplicateFoundState: CreatorUploadState = {
+      status: 'duplicateFound',
+      video: selectedVideo,
+      message: 'This video is already in your feed.',
+    };
+
+    it('returns to picking when the creator chooses another video', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, { type: 'pickAnotherVideo' });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'picking',
+      });
+    });
+
+    it('moves to editing when a different video is selected from duplicate recovery', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, {
+        type: 'videoSelected',
+        video: secondVideo,
+      });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'editing',
+        video: secondVideo,
+        title: '',
+        description: '',
+      });
+    });
+
+    it('stays in duplicate found when duplicate recovery picks another duplicate', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, {
+        type: 'duplicateVideoPicked',
+        video: secondVideo,
+        message: 'This video is already in your feed.',
+      });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'duplicateFound',
+        video: secondVideo,
+        message: 'This video is already in your feed.',
+      });
+    });
+
+    it('returns to idle when duplicate picking is cancelled', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, { type: 'cancelPicking' });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'idle',
+      });
+    });
+
+    it('returns to picking when the system picker is dismissed from duplicate recovery', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, { type: 'stayPicking' });
+
+      // Then
+      expect(nextState).toEqual({
+        status: 'picking',
+      });
+    });
+
+    it('ignores title changes before a non-duplicate video is accepted', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, {
+        type: 'changeTitle',
+        title: 'Ignored title',
+      });
+
+      // Then
+      expect(nextState).toEqual(duplicateFoundState);
+    });
+
+    it('ignores upload confirmation before a non-duplicate video is accepted', () => {
+      // Given
+      const state = duplicateFoundState;
+
+      // When
+      const nextState = reduceCreatorUpload(state, { type: 'confirmUpload' });
+
+      // Then
+      expect(nextState).toEqual(duplicateFoundState);
     });
   });
 

@@ -10,6 +10,7 @@ import {
 } from '@/src/domain/creator';
 import {
   pickCreatorVideo,
+  type UploadedVideoRepositoryPort,
   type VideoPickerPort,
   type VideoUploaderPort,
 } from '@/src/use-cases/creator';
@@ -19,6 +20,7 @@ import { useCreatorUpload } from './use-creator-upload';
 export type CreatorUploadScreenProps = {
   videoPicker: VideoPickerPort;
   videoUploader: VideoUploaderPort;
+  uploadedVideos?: UploadedVideoRepositoryPort;
   initialState?: CreatorUploadState;
   onExitFlow?: () => void;
 };
@@ -26,6 +28,7 @@ export type CreatorUploadScreenProps = {
 export function CreatorUploadScreen({
   videoPicker,
   videoUploader,
+  uploadedVideos,
   initialState,
   onExitFlow,
 }: CreatorUploadScreenProps) {
@@ -34,10 +37,13 @@ export function CreatorUploadScreen({
     initialState ?? initialCreatorUploadState
   );
   const previousStatus = useRef(state.status);
+  const latestState = useRef(state);
+  latestState.current = state;
 
   useCreatorUpload({
     state,
     videoUploader,
+    uploadedVideos,
     dispatch,
   });
 
@@ -52,11 +58,14 @@ export function CreatorUploadScreen({
   }, [onExitFlow, state.status]);
 
   const handlePickVideo = async () => {
-    if (state.status !== 'picking') {
+    const currentState = latestState.current;
+
+    if (currentState.status !== 'picking' && currentState.status !== 'duplicateFound') {
       return;
     }
 
-    const event = await pickCreatorVideo(state, { videoPicker });
+    const pickingState: CreatorUploadState = { status: 'picking' };
+    const event = await pickCreatorVideo(pickingState, { videoPicker, uploadedVideos });
 
     if (event) {
       dispatch(event);
@@ -119,6 +128,32 @@ function renderCreatorUploadState(
           </View>
           <Pressable accessibilityRole="button" onPress={onPickVideo} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Create upload</Text>
+          </Pressable>
+          {onExitFlow ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => dispatch({ type: 'cancelPicking' })}
+              style={styles.secondaryButton}>
+              <Text>Back home</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      );
+
+    case 'duplicateFound':
+      return (
+        <View style={styles.uploadCard}>
+          <Text style={styles.formTitle}>Video already uploaded</Text>
+          <Text style={styles.errorText}>{state.message}</Text>
+          <View style={styles.selectedFile}>
+            <Text style={styles.selectedFileName}>{getVideoLabel(state.video.fileName)}</Text>
+            <Text style={styles.dropzoneMeta}>{state.video.mimeType ?? 'Selected video file'}</Text>
+          </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onPickVideo}
+            style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Pick another video</Text>
           </Pressable>
           {onExitFlow ? (
             <Pressable

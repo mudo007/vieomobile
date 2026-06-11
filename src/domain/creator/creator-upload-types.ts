@@ -1,6 +1,7 @@
 // Models
 export type SelectedVideo = {
   uri: string;
+  assetId?: string;
   fileName?: string;
   mimeType?: string;
   durationMs?: number;
@@ -11,6 +12,12 @@ export type UploadedVideo = {
   id: string;
   title: string;
   sourceUri: string;
+  description?: string;
+  assetId?: string;
+  fileName?: string;
+  mimeType?: string;
+  durationMs?: number;
+  sizeBytes?: number;
 };
 
 // Failed states
@@ -47,6 +54,11 @@ export type CreatorUploadState =
     status: 'picking';
   }
   | {
+    status: 'duplicateFound';
+    video: SelectedVideo;
+    message: string;
+  }
+  | {
     status: 'editing';
     video: SelectedVideo;
     title: string;
@@ -78,12 +90,23 @@ export type CreatorUploadEvent =
     type: 'cancelPicking';
   }
   | {
+    type: 'stayPicking';
+  }
+  | {
     type: 'mediaPermissionDenied';
     message: string;
   }
   | {
     type: 'videoSelected';
     video: SelectedVideo;
+  }
+  | {
+    type: 'duplicateVideoPicked';
+    video: SelectedVideo;
+    message: string;
+  }
+  | {
+    type: 'pickAnotherVideo';
   }
   | {
     type: 'unsupportedVideoPicked';

@@ -3,6 +3,7 @@ import { uploadCreatorVideo, type VideoUploaderPort } from '@/src/use-cases/crea
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
+  assetId: 'asset-video-1',
   fileName: 'video.mov',
   mimeType: 'video/quicktime',
 };
@@ -92,6 +93,43 @@ describe('uploadCreatorVideo', () => {
       title: 'Launch demo',
       signal: controller.signal,
       onProgress: expect.any(Function),
+    });
+  });
+
+  it('stores uploaded video metadata when a repository is provided', async () => {
+    // Given
+    const controller = new AbortController();
+    const videoUploader = createSuccessfulUploader([1]);
+    const savedUploadedVideo: UploadedVideo = {
+      ...uploadedVideo,
+      description: uploadingState.description,
+      assetId: selectedVideo.assetId,
+      fileName: selectedVideo.fileName,
+      mimeType: selectedVideo.mimeType,
+    };
+    const uploadedVideos = {
+      hasUploadedVideo: jest.fn(),
+      saveUploadedVideo: jest.fn().mockResolvedValue(savedUploadedVideo),
+    };
+    const onProgressEvent = jest.fn();
+
+    // When
+    const event = await uploadCreatorVideo(
+      uploadingState,
+      { videoUploader, uploadedVideos, onProgressEvent },
+      controller.signal
+    );
+
+    // Then
+    expect(uploadedVideos.saveUploadedVideo).toHaveBeenCalledWith({
+      uploadedVideo,
+      video: selectedVideo,
+      title: uploadingState.title,
+      description: uploadingState.description,
+    });
+    expect(event).toEqual({
+      type: 'uploadSucceeded',
+      uploadedVideo: savedUploadedVideo,
     });
   });
 

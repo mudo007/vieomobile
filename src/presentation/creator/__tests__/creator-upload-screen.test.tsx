@@ -14,6 +14,7 @@ import type {
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
+  assetId: 'asset-video-1',
   fileName: 'video.mov',
   mimeType: 'video/quicktime',
 };
@@ -139,7 +140,7 @@ describe('<CreatorUploadScreen />', () => {
     expect(videoPicker.pickVideoCallCount).toBe(1);
   });
 
-  it('transitions away from the picking action when the picker reports cancellation', async () => {
+  it('stays on the picking screen when the picker reports cancellation', async () => {
     // Given
     const { getByText, queryByText, videoPicker } = await renderWithPickerResult({
       type: 'cancelled',
@@ -150,13 +151,13 @@ describe('<CreatorUploadScreen />', () => {
 
     // Then
     await waitFor(() => expect(videoPicker.pickVideoCallCount).toBe(1));
-    expect(queryByText('Create upload')).toBeNull();
+    expect(getByText('Create upload')).toBeTruthy();
     expect(queryByText('Confirm upload')).toBeNull();
     expect(queryByText('Title is required.')).toBeNull();
     expect(videoPicker.pickVideoCallCount).toBe(1);
   });
 
-  it('notifies the route when the picker cancellation exits the flow', async () => {
+  it('does not exit the route when the picker cancellation returns to the picking screen', async () => {
     // Given
     const onExitFlow = jest.fn();
     const { getByText } = await renderWithPickerResult(
@@ -169,7 +170,8 @@ describe('<CreatorUploadScreen />', () => {
     await press(getByText('Create upload'));
 
     // Then
-    expect(onExitFlow).toHaveBeenCalledTimes(1);
+    expect(getByText('Create upload')).toBeTruthy();
+    expect(onExitFlow).not.toHaveBeenCalled();
   });
 
   it('notifies the route when the user exits from the picking state', async () => {
@@ -216,6 +218,60 @@ describe('<CreatorUploadScreen />', () => {
 
     // Then
     expect(await findByText('Only local video files are supported.')).toBeTruthy();
+  });
+
+  it('reopens the picker from the duplicate warning recovery action', async () => {
+    // Given
+    const duplicateState: CreatorUploadState = {
+      status: 'duplicateFound',
+      video: selectedVideo,
+      message: 'This video is already in your feed.',
+    };
+    const { findByText, getByText, queryByText, videoPicker } = await renderWithPickerResult(
+      {
+        type: 'videoSelected',
+        video: {
+          ...selectedVideo,
+          uri: 'file:///creator/second-video.mov',
+          assetId: 'asset-video-2',
+          fileName: 'second-video.mov',
+        },
+      },
+      duplicateState
+    );
+
+    // When
+    expect(getByText('Video already uploaded')).toBeTruthy();
+    expect(getByText('This video is already in your feed.')).toBeTruthy();
+    await press(getByText('Pick another video'));
+
+    // Then
+    expect(videoPicker.pickVideoCallCount).toBe(1);
+    expect(await findByText('second-video.mov')).toBeTruthy();
+    expect(queryByText('Video already uploaded')).toBeNull();
+  });
+
+  it('returns to picking when duplicate recovery picker is dismissed', async () => {
+    // Given
+    const duplicateState: CreatorUploadState = {
+      status: 'duplicateFound',
+      video: selectedVideo,
+      message: 'This video is already in your feed.',
+    };
+    const { getByText, queryByText, videoPicker } = await renderWithPickerResult(
+      { type: 'cancelled' },
+      duplicateState
+    );
+
+    // When
+    expect(getByText('Video already uploaded')).toBeTruthy();
+    expect(getByText('This video is already in your feed.')).toBeTruthy();
+    await press(getByText('Pick another video'));
+
+    // Then
+    expect(videoPicker.pickVideoCallCount).toBe(1);
+    expect(getByText('Create upload')).toBeTruthy();
+    expect(queryByText('Video already uploaded')).toBeNull();
   });
 
   it('renders an unexpected picker error when the picker throws', async () => {

@@ -1,8 +1,10 @@
 import type { CreatorUploadEvent, CreatorUploadState } from '@/src/domain/creator';
+import type { UploadedVideoRepositoryPort } from './uploaded-video-repository-port';
 import type { VideoPickerPort } from './video-picker-port';
 
 type PickCreatorVideoPorts = {
   videoPicker: VideoPickerPort;
+  uploadedVideos?: UploadedVideoRepositoryPort;
 };
 
 export async function pickCreatorVideo(
@@ -18,7 +20,7 @@ export async function pickCreatorVideo(
 
     switch (result.type) {
       case 'cancelled':
-        return { type: 'cancelPicking' };
+        return { type: 'stayPicking' };
 
       case 'permissionDenied':
         return {
@@ -34,6 +36,14 @@ export async function pickCreatorVideo(
         };
 
       case 'videoSelected':
+        if (ports.uploadedVideos && (await ports.uploadedVideos.hasUploadedVideo(result.video))) {
+          return {
+            type: 'duplicateVideoPicked',
+            video: result.video,
+            message: 'This video is already in your feed.',
+          };
+        }
+
         return {
           type: 'videoSelected',
           video: result.video,

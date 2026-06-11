@@ -85,13 +85,32 @@ open -a Simulator
 eas build:run --platform ios
 ```
 
+## Expo native libraries
+
+See `docs/expo-libraries.md` for the library decision record.
+
+Current native module for the Creator plumbing:
+
+```zsh
+cd /Users/diogoandrade/Repos/videomobile
+
+npx expo install expo-image-picker
+```
+
+Verify:
+
+```zsh
+rg 'expo-image-picker' package.json package-lock.json
+```
+
 ## Future native dependencies
 
-Do not install other native Expo modules until the fake vertical slices, presentation design, and OTA update showcase are validated.
+Do not install other native Expo modules until the fake vertical slices, presentation design, OTA update showcase, and Creator picker plumbing are validated.
 
 Likely future candidates:
 
-- Expo media picker for the Creator picker adapter.
-- Expo AV or the currently recommended Expo video package for Follower playback.
+- `expo-video` for Follower playback.
+- `expo-media-library` only if a custom duplicate-filtering media browser becomes necessary.
+- `expo-file-system` only if URI pointers are too fragile and app-owned video copies are required.
 
 Install those with `npx expo install ...` when the project reaches the native integration pass.

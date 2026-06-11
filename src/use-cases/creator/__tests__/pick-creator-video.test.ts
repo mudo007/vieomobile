@@ -7,6 +7,7 @@ import type { CreatorUploadState, SelectedVideo } from '@/src/domain/creator';
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
+  assetId: 'asset-video-1',
   fileName: 'video.mov',
   mimeType: 'video/quicktime',
 };
@@ -22,13 +23,13 @@ describe('pickCreatorVideo', () => {
     expect(videoPicker.pickVideoCallCount).toBe(0);
   });
 
-  it('returns a cancel event when the picker is cancelled', async () => {
+  it('returns a stay picking event when the picker is cancelled', async () => {
     // Given
     const videoPicker = createFakeVideoPicker({ type: 'cancelled' });
 
     // When / Then
     await expect(pickCreatorVideo({ status: 'picking' }, { videoPicker })).resolves.toEqual({
-      type: 'cancelPicking',
+      type: 'stayPicking',
     });
     expect(videoPicker.pickVideoCallCount).toBe(1);
   });
@@ -72,6 +73,26 @@ describe('pickCreatorVideo', () => {
       type: 'videoSelected',
       video: selectedVideo,
     });
+  });
+
+  it('returns a duplicate video event when the selected video already exists', async () => {
+    // Given
+    const videoPicker = createFakeVideoPicker({ type: 'videoSelected', video: selectedVideo });
+    const uploadedVideos = {
+      hasUploadedVideo: jest.fn().mockResolvedValue(true),
+      saveUploadedVideo: jest.fn(),
+    };
+
+    // When / Then
+    await expect(
+      pickCreatorVideo({ status: 'picking' }, { videoPicker, uploadedVideos })
+    ).resolves.toEqual({
+      type: 'duplicateVideoPicked',
+      video: selectedVideo,
+      message: 'This video is already in your feed.',
+    });
+    expect(uploadedVideos.hasUploadedVideo).toHaveBeenCalledWith(selectedVideo);
+    expect(uploadedVideos.saveUploadedVideo).not.toHaveBeenCalled();
   });
 
   it('returns an unexpected failure event when the picker throws an Error', async () => {

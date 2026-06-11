@@ -1,20 +1,15 @@
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 
-import { createFakeVideoPicker, createFakeVideoUploader } from '@/src/adapters/fake';
+import { createExpoVideoPicker } from '@/src/adapters/expo';
+import { createFakeVideoUploader } from '@/src/adapters/fake';
+import { createInMemoryUploadedVideoRepository } from '@/src/adapters/in-memory';
 import type { CreatorUploadState } from '@/src/domain/creator';
 import { CreatorUploadScreen } from '@/src/presentation/creator';
 
-const demoVideoPicker = createFakeVideoPicker({
-  type: 'videoSelected',
-  video: {
-    uri: 'file:///demo/creator-video.mov',
-    fileName: 'creator-video.mov',
-    mimeType: 'video/quicktime',
-  },
-});
-
+const demoVideoPicker = createExpoVideoPicker();
 const demoVideoUploader = createFakeVideoUploader();
+const demoUploadedVideos = createInMemoryUploadedVideoRepository();
 
 const initialCreatorRouteState: CreatorUploadState = {
   status: 'picking',
@@ -35,6 +30,7 @@ export default function CreatorRoute() {
       key={sessionKey}
       videoPicker={demoVideoPicker}
       videoUploader={demoVideoUploader}
+      uploadedVideos={demoUploadedVideos}
       initialState={initialCreatorRouteState}
       onExitFlow={() => router.replace('/')}
     />
