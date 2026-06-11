@@ -120,7 +120,8 @@ function renderCreatorUploadState(
             Select a video first. You will add the title and description after the file is chosen.
           </Text>
           <Text style={styles.mutedText}>
-            Chosen videos are local files from the image gallery, and the app stores only an in-memory reference to the file, so don't worry about bloating your device storage
+            Chosen videos are local files from the image gallery, and the app stores only an
+            in-memory reference to the file, so do not worry about bloating your device storage.
           </Text>
           <Pressable accessibilityRole="button" onPress={onPickVideo} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Create upload</Text>

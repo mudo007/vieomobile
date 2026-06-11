@@ -97,3 +97,5 @@ Follower-side read plumbing is implemented:
 - `local-video-backend.ts` shares one in-memory repository between Creator and Follower routes.
 - If the repository is empty, Follower renders the existing empty feed state.
 - Follower playback uses `expo-video` inline inside the selected card's media frame.
+- Follower route exits close the selected player before navigation to avoid background audio.
+- Fullscreen remains owned by the native `expo-video` player controls.

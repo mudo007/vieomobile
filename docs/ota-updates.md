@@ -9,7 +9,7 @@ Do not confuse this with `expo.version` in `app.json`. The `APP_DEMO_VERSION` va
 Run these commands yourself from the project root:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 
 eas login
 eas whoami
@@ -57,7 +57,7 @@ eas build --platform ios --profile preview
 After the preview build is installed and opened once, make the OTA demo change:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 ```
 
 Edit this file:

@@ -2,31 +2,26 @@
 
 Throwaway React Native with Expo learning showcase.
 
-The goal is to demonstrate a senior backend/devops learning path for mobile: keep business logic testable in pure TypeScript, compose React Native screens around use cases, use fake adapters first, and let CI evaluate readiness before native integration work.
+The goal is to demonstrate a senior backend/devops learning path for mobile: keep business logic testable in pure TypeScript, compose React Native screens around use cases, use fake adapters before native integrations, and let CI evaluate readiness before demoing the app.
 
 ## Current Scope
 
 The app has two local vertical slices:
 
-- **Creator**: pick a real video with Expo ImagePicker, edit a title, validate input, show fake upload progress, generate a local thumbnail with Expo Video, save metadata in memory, complete upload, and return Home.
-- **Follower**: read the in-memory Creator uploads, render video cards with thumbnails when available, play a selected video inline with Expo Video, support empty/error states, pull-to-refresh, and return Home.
+- **Creator**: pick a real video with Expo ImagePicker, edit title/description, validate input, show fake upload progress, generate a local thumbnail with Expo Video, save metadata in memory, complete upload, and return Home.
+- **Follower**: read the in-memory Creator uploads, render video cards with thumbnails, play a selected video inline with Expo Video, use native player controls/fullscreen, support empty/error states, pull-to-refresh, and stop playback on route exit.
 
-The uploader is still intentionally fake-backed. This keeps progress/cancel testing simple while the picker, thumbnail, local feed, and inline playback plumbing use Expo/device behavior.
+The uploader is intentionally still fake-backed. This keeps progress/cancel testing easy while the picker, thumbnail generation, local feed, OTA setup, and inline playback use real Expo/device behavior.
 
-The current presentation pass is based on the supplied Figma references: light gray app background, white rounded cards, blue primary actions, muted secondary pills, image-first feed cards, and a form-card upload layout.
+The presentation pass is based on the supplied Figma references: light gray app background, white rounded cards, blue primary actions, muted secondary pills, image-first feed cards, and a form-card upload layout.
 
-## Commands
+## Quick Run
 
 Install dependencies:
 
 ```zsh
+cd ~/Repos/videomobile
 npm install
-```
-
-Start the app for Expo Go:
-
-```zsh
-npx expo start -c -g --lan
 ```
 
 Run the full local quality gate:
@@ -35,24 +30,41 @@ Run the full local quality gate:
 npm run ci
 ```
 
-Run individual checks:
+Run on a physical phone with Expo Go:
 
 ```zsh
-npm run lint
-npm run typecheck
-npm test
-```
-
-Enable media diagnostics only when debugging thumbnail/picker plumbing:
-
-```zsh
-printf 'EXPO_PUBLIC_MEDIA_DEBUG=true\n' > .env.local
 npx expo start -c -g --lan
 ```
 
+Then open Expo Go on the phone and scan the QR code. The phone and Mac should be on the same network.
+
+Run on the iOS Simulator with Expo Go:
+
+```zsh
+open -a Simulator
+npx expo start -c --ios
+```
+
+Run the installed iOS simulator preview build used for OTA demos:
+
+```zsh
+eas build --platform ios --profile preview-simulator
+open -a Simulator
+eas build:run --platform ios
+```
+
+Seed videos into the iOS Simulator Photos library when testing Creator:
+
+```zsh
+xcrun simctl addmedia booted /absolute/path/to/video1.mp4
+xcrun simctl addmedia booted /absolute/path/to/video2.mov
+```
+
+See `docs/dependencies.md` for simulator setup if `simctl` has no devices.
+
 ## Architecture
 
-`src/app/` contains Expo Router route files. This is framework glue: route composition, tab configuration, and wiring fake adapters into screens.
+`src/app/` contains Expo Router route files. This is framework glue: route composition, tab configuration, and wiring adapters into screens.
 
 `src/domain/` contains pure TypeScript state machines and domain types. It must not import React, React Native, Expo, or adapter code.
 
@@ -62,7 +74,7 @@ npx expo start -c -g --lan
 
 `src/presentation/` contains React Native screens and presentation hooks. Screens render state, dispatch user intents, and use hooks to run side effects such as loading a feed or uploading a video.
 
-`src/presentation/shared/app-design.ts` contains shared color, radius, spacing, and shadow tokens used by the current Figma-inspired UI pass.
+`src/presentation/shared/app-design.ts` contains shared color, radius, spacing, and shadow tokens used by the Figma-inspired UI pass.
 
 Tests are colocated under each hierarchy's `__tests__` folder.
 
@@ -70,12 +82,13 @@ Tests are colocated under each hierarchy's `__tests__` folder.
 
 ### Creator
 
-The Creator flow starts in `picking`, because choosing Creator from Home already means the user entered the Creator upload flow.
+The Creator flow starts in `picking`, because choosing Creator from Home already means the user entered the upload flow.
 
 State handling:
 
 - `picking`: render `Create upload` and `Back home`.
-- `editing`: render selected video, title input, validation, and cancel editing.
+- `editing`: render selected video, title/description input, validation, and cancel editing.
+- `duplicateFound`: show a recoverable warning and allow picking again.
 - `uploading`: render title, progress, and cancel upload.
 - `uploaded`: render completion and return Home.
 - `failed`: render the failure and return Home.
@@ -84,19 +97,19 @@ State handling:
 Side effects:
 
 - `pickCreatorVideo` uses a `VideoPickerPort`.
-- `uploadCreatorVideo` uses a `VideoUploaderPort`, optionally asks a `VideoThumbnailGeneratorPort` for a thumbnail, and saves metadata through an uploaded-video repository when one is provided.
-- `useCreatorUpload` starts the upload when state enters `uploading`, dispatches progress/success/failure events, and aborts when the upload is cancelled or unmounted.
+- `uploadCreatorVideo` uses a `VideoUploaderPort`, asks a `VideoThumbnailGeneratorPort` for a thumbnail, and saves metadata through an uploaded-video repository.
+- `useCreatorUpload` starts the upload when state enters `uploading`, dispatches progress/success/failure events, and aborts when upload is cancelled or unmounted.
 
 ### Follower
 
-The Follower flow loads feed cards through a port when the screen mounts. The current route uses the in-memory repository shared with Creator uploads.
+The Follower flow loads feed cards through a port when the screen mounts. The route uses the in-memory repository shared with Creator uploads.
 
 State handling:
 
 - `loading`: render loading text.
 - `ready`: render feed cards.
-- `refreshing`: keep feed cards visible while React Native pull-to-refresh shows an activity indicator.
-- `playing`: keep the feed visible and render an inline `expo-video` player inside the selected card's media frame.
+- `refreshing`: keep feed cards visible while pull-to-refresh shows an activity indicator.
+- `playing`: keep the feed visible and render an inline `expo-video` player inside the selected card.
 - `empty`: render empty state and refresh.
 - `failed`: render error and refresh.
 
@@ -105,7 +118,8 @@ Side effects:
 - `loadFollowerFeed` uses a `FollowerFeedPort`.
 - `useFollowerFeed` starts feed loading when state is `loading` or `refreshing`, dispatches loaded/failed events, and aborts when unmounted.
 - `InMemoryFollowerFeed` maps uploaded Creator metadata into feed cards and includes `sourceUri` plus generated thumbnail data when available.
-- The inline player delegates playback controls to `expo-video`; the app state only tracks which card is currently playing.
+- The inline player delegates play/pause/seek/fullscreen controls to `expo-video`; app state only tracks which card is currently playing.
+- Route exits and tab changes dispatch `closeVideo` before navigation so audio does not continue in the background.
 
 ## Testing Strategy
 
@@ -125,95 +139,85 @@ Run `npm run ci` before treating a change as ready. The CI script runs lint, typ
 
 ### Milestone 1. Walking Skeleton
 
-Status: complete.
+Status: closed.
 
-Acceptance criteria:
+Completed:
 
 - Expo SDK 54 app runs in Expo Go.
 - TypeScript, linting, Jest, and React Native Testing Library are configured.
 - `npm run ci` runs lint, typecheck, and tests.
-- At least one pure core test passes.
-- At least one screen test passes.
+- Initial pure TypeScript and screen tests pass.
 
-### Milestone 2. Fake Creator Flow
+### Milestone 2. Core-First Creator Flow
 
-Status: complete.
-
-Acceptance criteria:
-
-- Creator upload state is represented in `src/domain`.
-- Tests cover selected video, missing title, picker cancellation, upload progress, upload success, upload failure, and upload cancellation.
-- React Native screens render tested states without owning business rules.
-- Media picker and upload behavior use fake adapters first.
-
-### Milestone 3. Fake Follower Flow
-
-Status: complete.
-
-Acceptance criteria:
-
-- Feed loading, empty, loaded, and error states are represented in domain logic.
-- Tests cover load success, load failure, empty feed, refresh, delayed pull-to-refresh behavior, and player entry/exit.
-- Follower route renders fake feed data through a port-backed adapter.
-
-### Milestone 4. Presentation Polish
-
-Status: initial pass complete.
-
-Goal: make the app visually consistent and interview-demo friendly before adding native adapter complexity.
+Status: closed.
 
 Completed:
 
-- Introduce shared visual tokens for color, spacing, typography, and cards.
-- Replace placeholder-looking screens with intentional Home, Creator, and Follower layouts.
+- Creator upload state is represented in `src/domain`.
+- Tests cover selected video, missing title, picker cancellation, duplicate detection, upload progress, upload success, upload failure, and upload cancellation.
+- React Native screens render tested states without owning business rules.
+- Media picker and upload behavior started with fake adapters.
 
-Remaining candidate work:
+### Milestone 3. Follower Flow
 
-- Create reusable button/card components only where duplication is clear.
-- Keep existing tests focused on behavior rather than snapshots.
+Status: closed.
 
-### Milestone 5. Native Integration Pass
+Completed:
 
-Status: in progress.
+- Feed loading, empty, loaded, refreshing, error, and playing states are represented in domain logic.
+- Tests cover load success, load failure, empty feed, refresh, delayed pull-to-refresh behavior, and player entry/exit.
+- Follower route renders feed data through a port-backed adapter.
 
-Goal: replace fake adapters with Expo implementations where the app needs real device behavior.
+### Milestone 4. Presentation Polish
 
-Candidate work:
+Status: closed.
 
-- Replace fake picker with Expo media picker. Creator-side picker plumbing is implemented.
-- Generate local feed thumbnails with `expo-video`. Creator-side thumbnail plumbing is implemented.
-- Keep Expo Go and simulator/preview builds on the same thumbnail-generation path.
-- Validate media permission denied and picker cancel paths.
-- Reject duplicate media selections after the system picker returns, using the `duplicateFound` Creator state.
-- Replace fake Follower feed source with the local in-memory Creator upload repository. Follower-side feed plumbing is implemented.
-- Replace the fake Follower player frame with native inline video playback. Initial inline playback is implemented.
-- Document differences between fake adapters and real Expo behavior.
+Completed:
 
-### Milestone 6. OTA Update Demonstration
+- Shared visual tokens for color, spacing, typography, cards, and shadows.
+- Figma-inspired Home, Creator, and Follower layouts.
+- White cards, blue primary actions, safe-area-aware headers, readable text, and consistent feed/upload surfaces.
 
-Status: prepared.
+### Milestone 5. OTA Update Demonstration
 
-Goal: show Expo OTA delivery with a compatible JS/assets update.
+Status: closed.
 
-Acceptance criteria:
+Completed:
 
 - `expo-updates` and EAS Update are configured.
-- A preview or internal build receives a JS/assets update.
-- The demo changes `APP_DEMO_VERSION` in `src/presentation/shared/app-version.ts`.
-- The README explains that OTA cannot ship arbitrary native changes.
+- Preview and preview-simulator channels are configured in `eas.json`.
+- The OTA proof point is `APP_DEMO_VERSION` in `src/presentation/shared/app-version.ts`.
+- Docs explain that OTA can ship compatible JS/assets changes, not native dependency or permission changes.
 
 See `docs/ota-updates.md` for the Free-plan setup and demo commands.
 
+### Milestone 6. Native Integration Pass
+
+Status: closed.
+
+Completed:
+
+- Expo ImagePicker selects real videos from the device library.
+- Duplicate detection happens after the system picker returns.
+- Expo Video generates local feed thumbnails.
+- Expo Image renders thumbnail sources, including native image references.
+- Follower feed reads from the in-memory Creator upload repository.
+- Follower inline playback uses Expo Video native controls, including fullscreen.
+- Playback closes when leaving the Follower route.
+
 ## Docs
+
+`docs/specification.md` records the final learning strategy, scope, architecture, tradeoffs, and acceptance criteria.
 
 `docs/mac-install.md` records the Mac setup flow.
 
-`docs/dependencies.md` records dependency installation notes.
+`docs/dependencies.md` records dependency and simulator setup notes.
 
-`docs/testing.md` summarizes the current test strategy and where each kind of test belongs.
+`docs/testing.md` summarizes the test strategy and where each kind of test belongs.
 
 `docs/ota-updates.md` explains the EAS Update showcase flow, Free-plan caveats, build channels, and the visible demo-version bump.
 
-`docs/data-layer.md` records the URI-pointer video strategy, duplicate detection rule, and planned in-memory repository shape.
+`docs/data-layer.md` records the URI-pointer video strategy, duplicate detection rule, and in-memory repository shape.
 
-`docs/expo-libraries.md` records which Expo native libraries are used now, which are deferred, and how they affect OTA boundaries.
+`docs/expo-libraries.md` records the Expo native libraries used by this app and their OTA boundary impact.

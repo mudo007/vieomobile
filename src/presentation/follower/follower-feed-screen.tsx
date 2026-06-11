@@ -1,6 +1,6 @@
 import { Image, type ImageProps } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { useReducer } from 'react';
+import { useEffect, useReducer, useRef } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -27,18 +27,21 @@ import { useFollowerFeed } from './use-follower-feed';
 export type FollowerFeedScreenProps = {
   feedPort: FollowerFeedPort;
   initialState?: FollowerFeedState;
+  closePlaybackSignal?: number;
   onExitFlow?: () => void;
 };
 
 export function FollowerFeedScreen({
   feedPort,
   initialState,
+  closePlaybackSignal,
   onExitFlow,
 }: FollowerFeedScreenProps) {
   const [state, dispatch] = useReducer(
     reduceFollowerFeed,
     initialState ?? initialFollowerFeedState
   );
+  const previousClosePlaybackSignal = useRef(closePlaybackSignal);
 
   useFollowerFeed({
     state,
@@ -49,6 +52,20 @@ export function FollowerFeedScreen({
   const handleDispatch = (event: FollowerFeedEvent) => {
     dispatch(event);
   };
+
+  const handleExitFlow = () => {
+    dispatch({ type: 'closeVideo' });
+    onExitFlow?.();
+  };
+
+  useEffect(() => {
+    if (previousClosePlaybackSignal.current === closePlaybackSignal) {
+      return;
+    }
+
+    previousClosePlaybackSignal.current = closePlaybackSignal;
+    dispatch({ type: 'closeVideo' });
+  }, [closePlaybackSignal]);
 
   return (
     <View style={styles.container}>
@@ -67,7 +84,7 @@ export function FollowerFeedScreen({
       </SafeAreaView>
       <View style={styles.content}>
         {onExitFlow ? (
-          <Pressable accessibilityRole="button" onPress={onExitFlow} style={styles.secondaryButton}>
+          <Pressable accessibilityRole="button" onPress={handleExitFlow} style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Back home</Text>
           </Pressable>
         ) : null}
@@ -215,14 +232,20 @@ function InlineFollowerVideoPlayer({ sourceUri, title }: { sourceUri: string; ti
   });
 
   return (
-    <VideoView
-      accessibilityLabel={`Inline player for ${title}`}
-      allowsFullscreen={false}
-      allowsPictureInPicture={false}
-      nativeControls
-      player={player}
-      style={styles.cardImage}
-    />
+    <View style={styles.videoFrame}>
+      <VideoView
+        accessibilityLabel={`Inline player for ${title}`}
+        allowsPictureInPicture={false}
+        contentFit="contain"
+        fullscreenOptions={{
+          enable: true,
+          orientation: 'default',
+        }}
+        nativeControls
+        player={player}
+        style={styles.videoPlayer}
+      />
+    </View>
   );
 }
 
@@ -326,6 +349,17 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 16 / 9,
     backgroundColor: AppColors.mutedSurface,
+  },
+  videoFrame: {
+    position: 'relative',
+    width: '100%',
+    aspectRatio: 16 / 9,
+    backgroundColor: '#111827',
+  },
+  videoPlayer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#111827',
   },
   cardImageFallback: {
     aspectRatio: 16 / 9,

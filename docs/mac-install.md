@@ -55,7 +55,7 @@ Warnings about deprecated transitive packages during the global `eas-cli` instal
 Scaffold into a temporary directory first so existing repository files can be reviewed before copying:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 
 npx create-expo-app@latest /private/tmp/videomobile-expo-scaffold-sdk54 --template default@sdk-54
 ```
@@ -66,13 +66,13 @@ Copy the generated project into this repository:
 rsync -av \
   --exclude .git \
   /private/tmp/videomobile-expo-scaffold-sdk54/ \
-  /Users/diogoandrade/Repos/videomobile/
+  ~/Repos/videomobile/
 ```
 
 ## Start the app
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 npm install
 npx expo start -c -g --lan
 ```

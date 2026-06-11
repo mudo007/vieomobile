@@ -9,7 +9,7 @@ The current local Creator and Follower vertical slices use a small number of Exp
 Install Jest, the Expo Jest preset, Jest TypeScript types, and React Native Testing Library:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 
 npx expo install jest-expo jest @types/jest @testing-library/react-native --dev
 ```
@@ -34,7 +34,7 @@ Expected packages:
 Install `expo-updates` when starting the OTA showcase:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 
 npx expo install expo-updates
 ```
@@ -124,7 +124,7 @@ See `docs/expo-libraries.md` for the library decision record.
 Current native modules for media plumbing:
 
 ```zsh
-cd /Users/diogoandrade/Repos/videomobile
+cd ~/Repos/videomobile
 
 npx expo install expo-image-picker
 npx expo install expo-video

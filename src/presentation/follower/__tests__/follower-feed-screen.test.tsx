@@ -141,7 +141,7 @@ describe('<FollowerFeedScreen />', () => {
   it('renders an inline video player in the selected card frame when a feed video is pressed', async () => {
     // Given
     const feedPort = createFeedPort(feedVideos);
-    const { findByLabelText, findByText, getByText, queryByText } = await render(
+    const { findByLabelText, findByText, getByText, queryByLabelText, queryByText } = await render(
       <FollowerFeedScreen feedPort={feedPort} />
     );
     await findByText('Launch demo');
@@ -150,9 +150,13 @@ describe('<FollowerFeedScreen />', () => {
     await fireEvent.press(getByText('Launch demo'));
 
     // Then
-    expect(getByText('Your Feed')).toBeTruthy();
+    expect(getByText('Your Feed. Drag down and hold to refresh.')).toBeTruthy();
     expect(getByText('Launch demo')).toBeTruthy();
-    expect(await findByLabelText('Inline player for Launch demo')).toBeTruthy();
+    expect((await findByLabelText('Inline player for Launch demo')).props.fullscreenOptions).toEqual({
+      enable: true,
+      orientation: 'default',
+    });
+    expect(queryByLabelText('Enter fullscreen for Launch demo')).toBeNull();
     expect(getByText('Close video')).toBeTruthy();
     expect(queryByText('Video plays here')).toBeNull();
     expect(useVideoPlayer).toHaveBeenCalledWith(
@@ -179,6 +183,42 @@ describe('<FollowerFeedScreen />', () => {
     // Then
     expect(queryByLabelText('Inline player for Launch demo')).toBeNull();
     expect(getByText('Launch demo')).toBeTruthy();
+  });
+
+  it('closes the inline player before notifying the route to go home', async () => {
+    // Given
+    const onExitFlow = jest.fn();
+    const feedPort = createFeedPort(feedVideos);
+    const { findByLabelText, findByText, getByText, queryByLabelText } = await render(
+      <FollowerFeedScreen feedPort={feedPort} onExitFlow={onExitFlow} />
+    );
+    await findByText('Launch demo');
+    await fireEvent.press(getByText('Launch demo'));
+    await findByLabelText('Inline player for Launch demo');
+
+    // When
+    await fireEvent.press(getByText('Back home'));
+
+    // Then
+    expect(queryByLabelText('Inline player for Launch demo')).toBeNull();
+    expect(onExitFlow).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the inline player when the route loses focus', async () => {
+    // Given
+    const feedPort = createFeedPort(feedVideos);
+    const { findByLabelText, findByText, getByText, queryByLabelText, rerender } = await render(
+      <FollowerFeedScreen feedPort={feedPort} closePlaybackSignal={0} />
+    );
+    await findByText('Launch demo');
+    await fireEvent.press(getByText('Launch demo'));
+    await findByLabelText('Inline player for Launch demo');
+
+    // When
+    await rerender(<FollowerFeedScreen feedPort={feedPort} closePlaybackSignal={1} />);
+
+    // Then
+    expect(queryByLabelText('Inline player for Launch demo')).toBeNull();
   });
 
   it('renders an empty feed state', async () => {
