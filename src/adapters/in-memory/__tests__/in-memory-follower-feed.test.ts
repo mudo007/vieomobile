@@ -50,6 +50,7 @@ describe('InMemoryFollowerFeed', () => {
       {
         id: 'uploaded-video-1',
         title: 'Launch demo',
+        sourceUri: 'file:///creator/launch-demo.mov',
         creatorName: 'You',
         durationLabel: '00:12',
         description: 'A quick launch walkthrough.',

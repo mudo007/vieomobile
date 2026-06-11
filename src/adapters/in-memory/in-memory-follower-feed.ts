@@ -16,6 +16,7 @@ export class InMemoryFollowerFeed implements FollowerFeedPort {
     const videos = uploadedVideos.map((video) => ({
       id: video.id,
       title: video.title,
+      sourceUri: video.sourceUri,
       creatorName: 'You',
       durationLabel: formatDuration(video.durationMs),
       description: video.description,

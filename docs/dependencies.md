@@ -139,7 +139,7 @@ rg 'expo-image-picker|expo-video|expo-image' package.json package-lock.json
 Notes:
 
 - `expo-image-picker` opens the system media library for Creator video selection.
-- `expo-video` generates local video thumbnails and will later be used for playback.
+- `expo-video` generates local video thumbnails and powers inline follower playback.
 - `expo-image` renders thumbnail sources, including native image references returned by `expo-video`.
 - Adding or removing native modules requires a new native build before OTA updates can rely on those modules.
 

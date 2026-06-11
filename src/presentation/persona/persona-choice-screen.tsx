@@ -30,9 +30,7 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
       <View style={styles.heroCard}>
         <Text style={styles.kicker}>Learning showcase</Text>
         <Text style={styles.title}>Choose your flow</Text>
-        <Text style={styles.description}>
-          Explore the app through fake-backed vertical slices before native adapters are added.
-        </Text>
+
       </View>
 
       <View style={styles.actions}>

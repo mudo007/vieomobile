@@ -93,7 +93,7 @@ Creator-side plumbing is implemented:
 Follower-side read plumbing is implemented:
 
 - `InMemoryFollowerFeed` reads uploaded Creator metadata from `InMemoryUploadedVideoRepository`.
-- `InMemoryFollowerFeed` maps stored thumbnail data into feed card image data.
+- `InMemoryFollowerFeed` maps stored `sourceUri` and thumbnail data into feed card data.
 - `local-video-backend.ts` shares one in-memory repository between Creator and Follower routes.
 - If the repository is empty, Follower renders the existing empty feed state.
-- Later, replace the fake fullscreen player with `expo-video` playback.
+- Follower playback uses `expo-video` inline inside the selected card's media frame.

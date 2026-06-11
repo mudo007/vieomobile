@@ -1,4 +1,5 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { useVideoPlayer } from 'expo-video';
 
 import type { FollowerFeedVideo } from '@/src/domain/follower';
 import { FollowerFeedScreen } from '@/src/presentation/follower';
@@ -8,6 +9,7 @@ const feedVideos: FollowerFeedVideo[] = [
   {
     id: 'video-1',
     title: 'Launch demo',
+    sourceUri: 'file:///feed/launch-demo.mov',
     creatorName: 'Diogo',
     durationLabel: '00:42',
   },
@@ -17,6 +19,7 @@ const creatorUploadedVideos: FollowerFeedVideo[] = [
   {
     id: 'uploaded-video-1',
     title: 'Launch demo',
+    sourceUri: 'file:///creator/launch-demo.mov',
     creatorName: 'You',
     durationLabel: '00:12',
     description: 'A quick launch walkthrough.',
@@ -57,6 +60,10 @@ function createLoadedThenPendingFeedPort(videos: FollowerFeedVideo[]): FollowerF
 }
 
 describe('<FollowerFeedScreen />', () => {
+  beforeEach(() => {
+    jest.mocked(useVideoPlayer).mockClear();
+  });
+
   it('renders loading while the feed is pending', async () => {
     // Given
     const feedPort = createPendingFeedPort();
@@ -131,35 +138,46 @@ describe('<FollowerFeedScreen />', () => {
     await waitFor(() => expect(feedPort.loadFollowerFeed).toHaveBeenCalledTimes(2));
   });
 
-  it('opens a fake fullscreen player when a feed video is pressed', async () => {
+  it('renders an inline video player in the selected card frame when a feed video is pressed', async () => {
     // Given
     const feedPort = createFeedPort(feedVideos);
-    const { findByText, getByText } = await render(<FollowerFeedScreen feedPort={feedPort} />);
+    const { findByLabelText, findByText, getByText, queryByText } = await render(
+      <FollowerFeedScreen feedPort={feedPort} />
+    );
     await findByText('Launch demo');
 
     // When
     await fireEvent.press(getByText('Launch demo'));
 
     // Then
-    expect(getByText('Video plays here')).toBeTruthy();
+    expect(getByText('Your Feed')).toBeTruthy();
     expect(getByText('Launch demo')).toBeTruthy();
+    expect(await findByLabelText('Inline player for Launch demo')).toBeTruthy();
     expect(getByText('Close video')).toBeTruthy();
+    expect(queryByText('Video plays here')).toBeNull();
+    expect(useVideoPlayer).toHaveBeenCalledWith(
+      {
+        uri: 'file:///feed/launch-demo.mov',
+      },
+      expect.any(Function)
+    );
   });
 
-  it('returns to the feed when the fake player is closed', async () => {
+  it('returns the selected card to its thumbnail frame when the inline player is closed', async () => {
     // Given
     const feedPort = createFeedPort(feedVideos);
-    const { findByText, getByText, queryByText } = await render(
+    const { findByLabelText, findByText, getByText, queryByLabelText } = await render(
       <FollowerFeedScreen feedPort={feedPort} />
     );
     await findByText('Launch demo');
     await fireEvent.press(getByText('Launch demo'));
+    await findByLabelText('Inline player for Launch demo');
 
     // When
     await fireEvent.press(getByText('Close video'));
 
     // Then
-    expect(queryByText('Video plays here')).toBeNull();
+    expect(queryByLabelText('Inline player for Launch demo')).toBeNull();
     expect(getByText('Launch demo')).toBeTruthy();
   });
 

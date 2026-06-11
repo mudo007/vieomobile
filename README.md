@@ -9,9 +9,9 @@ The goal is to demonstrate a senior backend/devops learning path for mobile: kee
 The app has two local vertical slices:
 
 - **Creator**: pick a real video with Expo ImagePicker, edit a title, validate input, show fake upload progress, generate a local thumbnail with Expo Video, save metadata in memory, complete upload, and return Home.
-- **Follower**: read the in-memory Creator uploads, render video cards with thumbnails when available, open a fake fullscreen player, support empty/error states, pull-to-refresh, and return Home.
+- **Follower**: read the in-memory Creator uploads, render video cards with thumbnails when available, play a selected video inline with Expo Video, support empty/error states, pull-to-refresh, and return Home.
 
-The uploader and fullscreen player are still intentionally fake-backed. This keeps progress/cancel testing and playback scope simple while the real picker, thumbnail, and local feed plumbing are validated.
+The uploader is still intentionally fake-backed. This keeps progress/cancel testing simple while the picker, thumbnail, local feed, and inline playback plumbing use Expo/device behavior.
 
 The current presentation pass is based on the supplied Figma references: light gray app background, white rounded cards, blue primary actions, muted secondary pills, image-first feed cards, and a form-card upload layout.
 
@@ -96,7 +96,7 @@ State handling:
 - `loading`: render loading text.
 - `ready`: render feed cards.
 - `refreshing`: keep feed cards visible while React Native pull-to-refresh shows an activity indicator.
-- `playing`: render a fake fullscreen player frame for the selected feed video.
+- `playing`: keep the feed visible and render an inline `expo-video` player inside the selected card's media frame.
 - `empty`: render empty state and refresh.
 - `failed`: render error and refresh.
 
@@ -104,7 +104,8 @@ Side effects:
 
 - `loadFollowerFeed` uses a `FollowerFeedPort`.
 - `useFollowerFeed` starts feed loading when state is `loading` or `refreshing`, dispatches loaded/failed events, and aborts when unmounted.
-- `InMemoryFollowerFeed` maps uploaded Creator metadata into feed cards and includes the generated thumbnail source when available.
+- `InMemoryFollowerFeed` maps uploaded Creator metadata into feed cards and includes `sourceUri` plus generated thumbnail data when available.
+- The inline player delegates playback controls to `expo-video`; the app state only tracks which card is currently playing.
 
 ## Testing Strategy
 
@@ -152,7 +153,7 @@ Status: complete.
 Acceptance criteria:
 
 - Feed loading, empty, loaded, and error states are represented in domain logic.
-- Tests cover load success, load failure, empty feed, refresh, delayed pull-to-refresh behavior, and fake player entry/exit.
+- Tests cover load success, load failure, empty feed, refresh, delayed pull-to-refresh behavior, and player entry/exit.
 - Follower route renders fake feed data through a port-backed adapter.
 
 ### Milestone 4. Presentation Polish
@@ -185,7 +186,7 @@ Candidate work:
 - Validate media permission denied and picker cancel paths.
 - Reject duplicate media selections after the system picker returns, using the `duplicateFound` Creator state.
 - Replace fake Follower feed source with the local in-memory Creator upload repository. Follower-side feed plumbing is implemented.
-- Replace the fake Follower player frame with native video playback when needed.
+- Replace the fake Follower player frame with native inline video playback. Initial inline playback is implemented.
 - Document differences between fake adapters and real Expo behavior.
 
 ### Milestone 6. OTA Update Demonstration

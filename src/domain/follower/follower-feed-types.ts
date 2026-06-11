@@ -3,6 +3,7 @@ export type FollowerFeedImageSource = string | object;
 export type FollowerFeedVideo = {
   id: string;
   title: string;
+  sourceUri?: string;
   creatorName: string;
   durationLabel: string;
   description?: string;

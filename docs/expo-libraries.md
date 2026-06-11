@@ -34,7 +34,7 @@ Important behavior:
 
 ### `expo-video`
 
-Purpose: local video thumbnail generation now, and Follower playback later.
+Purpose: local video thumbnail generation and Follower inline playback.
 
 Install:
 
@@ -51,6 +51,7 @@ Usage boundary:
 - The thumbnail returned by `expo-video` is a native image reference, not a persistent file URI.
 - Render native thumbnail references with `expo-image`.
 - Keep player component details in presentation or a presentation adapter.
+- `FollowerFeedScreen` renders `VideoView` inline inside the selected card's media frame.
 - Keep play/pause/seek internals owned by `expo-video`, unless the app needs business rules around playback.
 - Feed/domain state should model app-level intent, such as `playing` or `closeVideo`, not low-level player controls.
 

@@ -43,7 +43,7 @@ Current examples:
 
 Presentation tests live near `src/presentation/**/__tests__`.
 
-Use these to verify user-visible behavior: rendered states, button presses, validation messages, progress display, pull-to-refresh indicators, fake player entry/exit, and route callbacks.
+Use these to verify user-visible behavior: rendered states, button presses, validation messages, progress display, pull-to-refresh indicators, inline player entry/exit, and route callbacks.
 
 Avoid snapshot tests for now. Behavior-based tests are easier to discuss in an interview and less brittle while the UI is still evolving.
 

@@ -1,5 +1,6 @@
 import { useReducer } from 'react';
 import { Image, type ImageProps } from 'expo-image';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import {
   ActivityIndicator,
   Pressable,
@@ -106,25 +107,9 @@ function renderFollowerFeedState(
         </View>
       );
 
-    case 'playing':
-      return (
-        <View style={styles.player}>
-          <Text style={styles.playerTitle}>{state.video.title}</Text>
-          <View style={styles.fakeFrame}>
-            <Text style={styles.fakeFrameText}>Video plays here</Text>
-          </View>
-          <Text style={styles.mutedText}>{state.video.creatorName}</Text>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => dispatch({ type: 'closeVideo' })}
-            style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Close video</Text>
-          </Pressable>
-        </View>
-      );
-
     case 'ready':
     case 'refreshing':
+    case 'playing':
       return (
         <View style={styles.feedContainer}>
           <Text style={styles.pageTitle}>Your Feed</Text>
@@ -146,7 +131,12 @@ function renderFollowerFeedState(
               />
             }>
           {state.videos.map((video) => (
-            <FollowerVideoCard key={video.id} video={video} dispatch={dispatch} />
+            <FollowerVideoCard
+              key={video.id}
+              video={video}
+              isPlaying={state.status === 'playing' && state.video.id === video.id}
+              dispatch={dispatch}
+            />
           ))}
           </ScrollView>
         </View>
@@ -156,9 +146,11 @@ function renderFollowerFeedState(
 
 function FollowerVideoCard({
   video,
+  isPlaying,
   dispatch,
 }: {
   video: FollowerFeedVideo;
+  isPlaying: boolean;
   dispatch: (event: FollowerFeedEvent) => void;
 }) {
   const imageSource = getThumbnailImageSource(video);
@@ -175,7 +167,9 @@ function FollowerVideoCard({
       accessibilityRole="button"
       onPress={() => dispatch({ type: 'videoSelected', video })}
       style={styles.card}>
-      {imageSource ? (
+      {isPlaying && video.sourceUri ? (
+        <InlineFollowerVideoPlayer sourceUri={video.sourceUri} title={video.title} />
+      ) : imageSource ? (
         <Image
           accessibilityLabel={`Thumbnail for ${video.title}`}
           source={imageSource}
@@ -200,9 +194,35 @@ function FollowerVideoCard({
             <Text style={styles.metaText}>⌯</Text>
             <Text style={[styles.metaText, styles.metaTime]}>{video.publishedAgo ?? video.durationLabel}</Text>
           </View>
+          {isPlaying ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => dispatch({ type: 'closeVideo' })}
+              style={styles.inlineCloseButton}>
+              <Text style={styles.inlineCloseButtonText}>Close video</Text>
+            </Pressable>
+          ) : null}
         </View>
       </View>
     </Pressable>
+  );
+}
+
+function InlineFollowerVideoPlayer({ sourceUri, title }: { sourceUri: string; title: string }) {
+  const player = useVideoPlayer({ uri: sourceUri }, (videoPlayer) => {
+    videoPlayer.loop = false;
+    videoPlayer.play();
+  });
+
+  return (
+    <VideoView
+      accessibilityLabel={`Inline player for ${title}`}
+      allowsFullscreen={false}
+      allowsPictureInPicture={false}
+      nativeControls
+      player={player}
+      style={styles.cardImage}
+    />
   );
 }
 
@@ -394,32 +414,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
   },
-  player: {
-    flex: 1,
-    gap: AppSpacing.md,
-    borderRadius: AppRadii.md,
-    backgroundColor: AppColors.surface,
-    padding: AppSpacing.md,
-    ...AppShadow,
-  },
-  playerTitle: {
-    color: AppColors.text,
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  fakeFrame: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: AppRadii.lg,
-    backgroundColor: AppColors.darkFrame,
-    padding: AppSpacing.lg,
-  },
-  fakeFrameText: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: '700',
-  },
   errorText: {
     color: AppColors.danger,
     fontWeight: '700',
@@ -445,6 +439,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   secondaryButtonText: {
+    color: AppColors.text,
+    fontWeight: '700',
+  },
+  inlineCloseButton: {
+    alignSelf: 'flex-start',
+    borderRadius: AppRadii.sm,
+    backgroundColor: AppColors.mutedSurface,
+    marginTop: AppSpacing.xs,
+    paddingHorizontal: AppSpacing.sm,
+    paddingVertical: 8,
+  },
+  inlineCloseButtonText: {
     color: AppColors.text,
     fontWeight: '700',
   },
