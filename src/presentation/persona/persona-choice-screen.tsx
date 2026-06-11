@@ -30,7 +30,12 @@ export function PersonaChoiceScreen({ onChoosePersona }: PersonaChoiceScreenProp
       <View style={styles.heroCard}>
         <Text style={styles.kicker}>Learning showcase</Text>
         <Text style={styles.title}>Choose your flow</Text>
-
+        <Text style={styles.description}>
+          This is a demo app built to showcase the video upload flow we built for one of our clients. You can choose to experience the flow as a creator or as a follower. Feel free to explore both flows!
+        </Text>
+        <Text style={styles.description}>
+          Videos uploaded in the creator flow are shown in the follower feed.
+        </Text>
       </View>
 
       <View style={styles.actions}>

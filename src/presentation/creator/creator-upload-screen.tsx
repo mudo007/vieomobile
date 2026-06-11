@@ -8,6 +8,7 @@ import {
   type CreatorUploadEvent,
   type CreatorUploadState,
 } from '@/src/domain/creator';
+import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
 import {
   pickCreatorVideo,
   type UploadedVideoRepositoryPort,
@@ -15,7 +16,6 @@ import {
   type VideoThumbnailGeneratorPort,
   type VideoUploaderPort,
 } from '@/src/use-cases/creator';
-import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
 import { useCreatorUpload } from './use-creator-upload';
 
 export type CreatorUploadScreenProps = {
@@ -119,17 +119,9 @@ function renderCreatorUploadState(
           <Text style={styles.mutedText}>
             Select a video first. You will add the title and description after the file is chosen.
           </Text>
-          <View style={styles.field}>
-            <Text style={styles.label}>Video File</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onPickVideo}
-              style={styles.fileDropzone}>
-              <Text style={styles.uploadIcon}>↥</Text>
-              <Text style={styles.dropzoneText}>Click to upload or drag and drop</Text>
-              <Text style={styles.dropzoneMeta}>MP4, MOV, AVI (MAX. 500MB)</Text>
-            </Pressable>
-          </View>
+          <Text style={styles.mutedText}>
+            Chosen videos are local files from the image gallery, and the app stores only an in-memory reference to the file, so don't worry about bloating your device storage
+          </Text>
           <Pressable accessibilityRole="button" onPress={onPickVideo} style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Create upload</Text>
           </Pressable>
@@ -222,6 +214,7 @@ function renderCreatorUploadState(
       return (
         <View style={styles.uploadCard}>
           <Text style={styles.formTitle}>Uploading {state.title}</Text>
+          <Text style={styles.mutedText}>This progress bar is faked just for demo purposes</Text>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${Math.round(state.progress * 100)}%` }]} />
           </View>

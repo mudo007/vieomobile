@@ -1,6 +1,6 @@
-import { useReducer } from 'react';
 import { Image, type ImageProps } from 'expo-image';
 import { useVideoPlayer, VideoView } from 'expo-video';
+import { useReducer } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,8 +20,8 @@ import {
   type FollowerFeedState,
   type FollowerFeedVideo,
 } from '@/src/domain/follower';
-import type { FollowerFeedPort } from '@/src/use-cases/follower';
 import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
+import type { FollowerFeedPort } from '@/src/use-cases/follower';
 import { useFollowerFeed } from './use-follower-feed';
 
 export type FollowerFeedScreenProps = {
@@ -112,7 +112,7 @@ function renderFollowerFeedState(
     case 'playing':
       return (
         <View style={styles.feedContainer}>
-          <Text style={styles.pageTitle}>Your Feed</Text>
+          <Text style={styles.pageTitle}>Your Feed. Drag down and hold to refresh.</Text>
           {state.status === 'refreshing' ? (
             <ActivityIndicator
               accessibilityLabel="Refreshing feed"
