@@ -6,12 +6,12 @@ The goal is to demonstrate a senior backend/devops learning path for mobile: kee
 
 ## Current Scope
 
-The app has two fake vertical slices:
+The app has two local vertical slices:
 
-- **Creator**: pick a fake video, edit a title, validate input, show fake upload progress, complete upload, and return Home.
-- **Follower**: load a fake feed, render video cards, open a fake fullscreen player, support empty/error states, pull-to-refresh with a delayed fake adapter, and return Home.
+- **Creator**: pick a real video with Expo ImagePicker, edit a title, validate input, show fake upload progress, generate a local thumbnail with Expo Video, save metadata in memory, complete upload, and return Home.
+- **Follower**: read the in-memory Creator uploads, render video cards with thumbnails when available, open a fake fullscreen player, support empty/error states, pull-to-refresh, and return Home.
 
-Both flows are intentionally fake-backed. This lets the presentation, state modeling, and testing strategy be validated before adding Expo media picker, playback, storage, or backend integrations.
+The uploader and fullscreen player are still intentionally fake-backed. This keeps progress/cancel testing and playback scope simple while the real picker, thumbnail, and local feed plumbing are validated.
 
 The current presentation pass is based on the supplied Figma references: light gray app background, white rounded cards, blue primary actions, muted secondary pills, image-first feed cards, and a form-card upload layout.
 
@@ -43,6 +43,13 @@ npm run typecheck
 npm test
 ```
 
+Enable media diagnostics only when debugging thumbnail/picker plumbing:
+
+```zsh
+printf 'EXPO_PUBLIC_MEDIA_DEBUG=true\n' > .env.local
+npx expo start -c -g --lan
+```
+
 ## Architecture
 
 `src/app/` contains Expo Router route files. This is framework glue: route composition, tab configuration, and wiring fake adapters into screens.
@@ -51,7 +58,7 @@ npm test
 
 `src/use-cases/` contains application use cases and ports. Use cases translate adapter results into domain events and keep platform details outside the domain.
 
-`src/adapters/` contains fake or platform implementations of ports. Current adapters are fake implementations for video picking, video uploading, and follower feed loading/refreshing.
+`src/adapters/` contains fake, in-memory, or Expo implementations of ports. Current adapters include Expo video picking, Expo thumbnail generation, fake upload progress, and an in-memory local video repository/feed.
 
 `src/presentation/` contains React Native screens and presentation hooks. Screens render state, dispatch user intents, and use hooks to run side effects such as loading a feed or uploading a video.
 
@@ -77,12 +84,12 @@ State handling:
 Side effects:
 
 - `pickCreatorVideo` uses a `VideoPickerPort`.
-- `uploadCreatorVideo` uses a `VideoUploaderPort`.
+- `uploadCreatorVideo` uses a `VideoUploaderPort`, optionally asks a `VideoThumbnailGeneratorPort` for a thumbnail, and saves metadata through an uploaded-video repository when one is provided.
 - `useCreatorUpload` starts the upload when state enters `uploading`, dispatches progress/success/failure events, and aborts when the upload is cancelled or unmounted.
 
 ### Follower
 
-The Follower flow loads a fake feed when the screen mounts.
+The Follower flow loads feed cards through a port when the screen mounts. The current route uses the in-memory repository shared with Creator uploads.
 
 State handling:
 
@@ -97,7 +104,7 @@ Side effects:
 
 - `loadFollowerFeed` uses a `FollowerFeedPort`.
 - `useFollowerFeed` starts feed loading when state is `loading` or `refreshing`, dispatches loaded/failed events, and aborts when unmounted.
-- `FakeFollowerFeed` returns initial feed data immediately and delays refresh loads for 3 seconds so the presentation can show a realistic pull-to-refresh spinner.
+- `InMemoryFollowerFeed` maps uploaded Creator metadata into feed cards and includes the generated thumbnail source when available.
 
 ## Testing Strategy
 
@@ -106,8 +113,8 @@ The core rule is to separate business logic from rendering and platform APIs.
 Coverage currently includes:
 
 - Domain reducer tests for Creator and Follower state machines.
-- Use-case tests for picker, upload, and feed loading.
-- Fake adapter tests for upload progress, follower feed data, and delayed follower refresh behavior.
+- Use-case tests for picker, upload, thumbnail handoff, and feed loading.
+- Adapter tests for upload progress, Expo thumbnail generation, in-memory feed data, and delayed fake refresh behavior.
 - React Native screen tests for Creator, Follower, and persona choice presentation.
 - Route tests for Home, Creator, and Follower navigation behavior.
 
@@ -166,15 +173,18 @@ Remaining candidate work:
 
 ### Milestone 5. Native Integration Pass
 
-Status: not started.
+Status: in progress.
 
 Goal: replace fake adapters with Expo implementations where the app needs real device behavior.
 
 Candidate work:
 
 - Replace fake picker with Expo media picker. Creator-side picker plumbing is implemented.
+- Generate local feed thumbnails with `expo-video`. Creator-side thumbnail plumbing is implemented.
+- Keep Expo Go and simulator/preview builds on the same thumbnail-generation path.
 - Validate media permission denied and picker cancel paths.
 - Reject duplicate media selections after the system picker returns, using the `duplicateFound` Creator state.
+- Replace fake Follower feed source with the local in-memory Creator upload repository. Follower-side feed plumbing is implemented.
 - Replace the fake Follower player frame with native video playback when needed.
 - Document differences between fake adapters and real Expo behavior.
 

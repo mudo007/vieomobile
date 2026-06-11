@@ -8,6 +8,7 @@ const selectedVideo: SelectedVideo = {
   mimeType: 'video/quicktime',
   durationMs: 12_000,
   sizeBytes: 42_000_000,
+  thumbnailUri: 'file:///thumbnails/video-1.jpg',
 };
 
 const uploadedVideo: UploadedVideo = {
@@ -40,6 +41,7 @@ describe('InMemoryUploadedVideoRepository', () => {
       mimeType: 'video/quicktime',
       durationMs: 12_000,
       sizeBytes: 42_000_000,
+      thumbnailUri: 'file:///thumbnails/video-1.jpg',
     });
   });
 

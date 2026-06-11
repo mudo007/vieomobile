@@ -32,23 +32,74 @@ Important behavior:
 - The app stores URI pointers and metadata, not video bytes in JavaScript memory.
 - iOS video access may require media-library permission before or immediately after picking, depending on picker options.
 
-## Planned Native Modules
-
 ### `expo-video`
 
-Purpose: Follower playback for URI-based videos.
+Purpose: local video thumbnail generation now, and Follower playback later.
 
-Install later, when replacing the fake fullscreen player:
+Install:
 
 ```zsh
+cd /Users/diogoandrade/Repos/videomobile
+
 npx expo install expo-video
 ```
 
 Usage boundary:
 
+- Keep direct `expo-video` imports inside adapters or player presentation code.
+- `ExpoVideoThumbnailGenerator` creates a `VideoPlayer` from the picked video URI, calls `generateThumbnailsAsync`, and releases the player.
+- The thumbnail returned by `expo-video` is a native image reference, not a persistent file URI.
+- Render native thumbnail references with `expo-image`.
 - Keep player component details in presentation or a presentation adapter.
 - Keep play/pause/seek internals owned by `expo-video`, unless the app needs business rules around playback.
 - Feed/domain state should model app-level intent, such as `playing` or `closeVideo`, not low-level player controls.
+
+Important behavior:
+
+- Creating a `VideoPlayer` directly means we must call `release()`; the adapter test covers that cleanup.
+- Pass thumbnail times as an array, even though the TypeScript API accepts a scalar. The SDK 54 iOS bridge path can crash while casting a scalar number into the native array argument.
+- Create the player empty, call `replaceAsync`, then generate thumbnails. Calling thumbnail generation immediately after constructing a sourced player can return an empty array because the native `AVPlayerItem` is not attached yet.
+- Thumbnail generation is optional decoration. If it fails in the use case, the upload still succeeds and the feed card falls back to the placeholder frame.
+- Expo Go and simulator/preview builds use the same thumbnail adapter now that the SDK 54 scalar-argument crash is avoided.
+- Since `expo-video` is a native module, this change requires a new preview build before OTA updates can depend on it.
+
+Debugging:
+
+- The thumbnail path can log compact diagnostics with the `[VideoShare media]` prefix.
+- Logging is disabled by default. Enable it through a local, gitignored env file:
+
+```zsh
+printf 'EXPO_PUBLIC_MEDIA_DEBUG=true\n' > .env.local
+npx expo start -c -g --lan
+```
+
+- Disable it by deleting `.env.local` or setting `EXPO_PUBLIC_MEDIA_DEBUG=false`.
+- Expo Go shows those logs in the Metro terminal.
+- For simulator builds, stream only these app diagnostics:
+
+```zsh
+xcrun simctl spawn booted log stream --style compact --level info \
+  --predicate 'eventMessage CONTAINS[c] "[VideoShare media]"'
+```
+
+### `expo-image`
+
+Purpose: render feed card thumbnails.
+
+Install:
+
+```zsh
+cd /Users/diogoandrade/Repos/videomobile
+
+npx expo install expo-image
+```
+
+Usage boundary:
+
+- Keep image rendering in presentation.
+- It accepts URI image sources and native image references from `expo-video`.
+
+## Planned Native Modules
 
 ### `expo-media-library`
 

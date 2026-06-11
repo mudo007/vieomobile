@@ -1,4 +1,6 @@
 // Models
+export type VideoThumbnailSource = string | object;
+
 export type SelectedVideo = {
   uri: string;
   assetId?: string;
@@ -6,6 +8,8 @@ export type SelectedVideo = {
   mimeType?: string;
   durationMs?: number;
   sizeBytes?: number;
+  thumbnailUri?: string;
+  thumbnailSource?: VideoThumbnailSource;
 };
 
 export type UploadedVideo = {
@@ -18,6 +22,8 @@ export type UploadedVideo = {
   mimeType?: string;
   durationMs?: number;
   sizeBytes?: number;
+  thumbnailUri?: string;
+  thumbnailSource?: VideoThumbnailSource;
 };
 
 // Failed states

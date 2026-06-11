@@ -1,3 +1,5 @@
+export type FollowerFeedImageSource = string | object;
+
 export type FollowerFeedVideo = {
   id: string;
   title: string;
@@ -5,6 +7,7 @@ export type FollowerFeedVideo = {
   durationLabel: string;
   description?: string;
   imageUri?: string;
+  imageSource?: FollowerFeedImageSource;
   likeCount?: number;
   commentCount?: number;
   publishedAgo?: string;

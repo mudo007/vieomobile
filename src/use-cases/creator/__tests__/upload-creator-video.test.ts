@@ -1,5 +1,9 @@
 import type { CreatorUploadState, SelectedVideo, UploadedVideo } from '@/src/domain/creator';
-import { uploadCreatorVideo, type VideoUploaderPort } from '@/src/use-cases/creator';
+import {
+  uploadCreatorVideo,
+  type VideoThumbnailGeneratorPort,
+  type VideoUploaderPort,
+} from '@/src/use-cases/creator';
 
 const selectedVideo: SelectedVideo = {
   uri: 'file:///creator/video.mov',
@@ -34,6 +38,12 @@ function createSuccessfulUploader(progressValues: number[]): VideoUploaderPort {
 function createThrowingUploader(error: unknown): VideoUploaderPort {
   return {
     uploadCreatorVideo: jest.fn().mockRejectedValue(error),
+  };
+}
+
+function createThumbnailGenerator(thumbnailUri: string | null): VideoThumbnailGeneratorPort {
+  return {
+    generateThumbnail: jest.fn().mockResolvedValue(thumbnailUri),
   };
 }
 
@@ -124,6 +134,53 @@ describe('uploadCreatorVideo', () => {
     expect(uploadedVideos.saveUploadedVideo).toHaveBeenCalledWith({
       uploadedVideo,
       video: selectedVideo,
+      title: uploadingState.title,
+      description: uploadingState.description,
+    });
+    expect(event).toEqual({
+      type: 'uploadSucceeded',
+      uploadedVideo: savedUploadedVideo,
+    });
+  });
+
+  it('generates and stores a thumbnail when a thumbnail generator is provided', async () => {
+    // Given
+    const controller = new AbortController();
+    const videoUploader = createSuccessfulUploader([1]);
+    const videoThumbnailGenerator = createThumbnailGenerator('file:///thumbnails/video-1.jpg');
+    const savedUploadedVideo: UploadedVideo = {
+      ...uploadedVideo,
+      description: uploadingState.description,
+      assetId: selectedVideo.assetId,
+      fileName: selectedVideo.fileName,
+      mimeType: selectedVideo.mimeType,
+      thumbnailUri: 'file:///thumbnails/video-1.jpg',
+    };
+    const uploadedVideos = {
+      hasUploadedVideo: jest.fn(),
+      saveUploadedVideo: jest.fn().mockResolvedValue(savedUploadedVideo),
+    };
+    const onProgressEvent = jest.fn();
+
+    // When
+    const event = await uploadCreatorVideo(
+      uploadingState,
+      { videoUploader, uploadedVideos, videoThumbnailGenerator, onProgressEvent },
+      controller.signal
+    );
+
+    // Then
+    expect(videoThumbnailGenerator.generateThumbnail).toHaveBeenCalledWith({
+      video: selectedVideo,
+      timeSeconds: 1,
+    });
+    expect(uploadedVideos.saveUploadedVideo).toHaveBeenCalledWith({
+      uploadedVideo,
+      video: {
+        ...selectedVideo,
+        thumbnailUri: 'file:///thumbnails/video-1.jpg',
+        thumbnailSource: 'file:///thumbnails/video-1.jpg',
+      },
       title: uploadingState.title,
       description: uploadingState.description,
     });

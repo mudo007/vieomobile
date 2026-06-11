@@ -1,10 +1,18 @@
-import type { CreatorUploadEvent, CreatorUploadState } from '@/src/domain/creator';
+import type {
+  CreatorUploadEvent,
+  CreatorUploadState,
+  SelectedVideo,
+  VideoThumbnailSource,
+} from '@/src/domain/creator';
+import { describeMediaSource, logMediaDebug } from '@/src/diagnostics/media-debug-log';
 import type { UploadedVideoRepositoryPort } from './uploaded-video-repository-port';
+import type { VideoThumbnailGeneratorPort } from './video-thumbnail-generator-port';
 import type { VideoUploaderPort } from './video-uploader-port';
 
 type UploadCreatorVideoPorts = {
   videoUploader: VideoUploaderPort;
   uploadedVideos?: UploadedVideoRepositoryPort;
+  videoThumbnailGenerator?: VideoThumbnailGeneratorPort;
   onProgressEvent: (event: CreatorUploadEvent) => void;
 };
 
@@ -34,9 +42,14 @@ export async function uploadCreatorVideo(
     }
 
     if (ports.uploadedVideos) {
+      const thumbnailSource = await generateThumbnailSource(state, ports.videoThumbnailGenerator);
+      const video = thumbnailSource
+        ? addThumbnailToSelectedVideo(state.video, thumbnailSource)
+        : state.video;
+
       uploadedVideo = await ports.uploadedVideos.saveUploadedVideo({
         uploadedVideo,
-        video: state.video,
+        video,
         title: state.title,
         description: state.description,
       });
@@ -56,6 +69,47 @@ export async function uploadCreatorVideo(
       message: getUploadFailureMessage(error),
     };
   }
+}
+
+async function generateThumbnailSource(
+  state: CreatorUploadState,
+  videoThumbnailGenerator: VideoThumbnailGeneratorPort | undefined
+): Promise<VideoThumbnailSource | null> {
+  if (state.status !== 'uploading' || !videoThumbnailGenerator) {
+    logMediaDebug('thumbnail generation skipped', {
+      state: state.status,
+      hasGenerator: Boolean(videoThumbnailGenerator),
+    });
+
+    return null;
+  }
+
+  try {
+    const thumbnailSource = await videoThumbnailGenerator.generateThumbnail({
+      video: state.video,
+      timeSeconds: 1,
+    });
+
+    logMediaDebug('thumbnail generation returned to use case', {
+      thumbnail: describeMediaSource(thumbnailSource),
+    });
+
+    return thumbnailSource;
+  } catch {
+    logMediaDebug('thumbnail generation failed; upload will continue without thumbnail');
+    return null;
+  }
+}
+
+function addThumbnailToSelectedVideo(
+  video: SelectedVideo,
+  thumbnailSource: VideoThumbnailSource
+): SelectedVideo {
+  return {
+    ...video,
+    thumbnailSource,
+    ...(typeof thumbnailSource === 'string' ? { thumbnailUri: thumbnailSource } : {}),
+  };
 }
 
 function isAbortError(error: unknown): boolean {

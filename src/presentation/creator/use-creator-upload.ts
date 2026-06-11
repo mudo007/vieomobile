@@ -4,6 +4,7 @@ import type { CreatorUploadEvent, CreatorUploadState } from '@/src/domain/creato
 import {
   uploadCreatorVideo,
   type UploadedVideoRepositoryPort,
+  type VideoThumbnailGeneratorPort,
   type VideoUploaderPort,
 } from '@/src/use-cases/creator';
 
@@ -11,6 +12,7 @@ type UseCreatorUploadParams = {
   state: CreatorUploadState;
   videoUploader: VideoUploaderPort;
   uploadedVideos?: UploadedVideoRepositoryPort;
+  videoThumbnailGenerator?: VideoThumbnailGeneratorPort;
   dispatch: (event: CreatorUploadEvent) => void;
 };
 
@@ -18,6 +20,7 @@ export function useCreatorUpload({
   state,
   videoUploader,
   uploadedVideos,
+  videoThumbnailGenerator,
   dispatch,
 }: UseCreatorUploadParams) {
   const latestState = useRef(state);
@@ -41,6 +44,7 @@ export function useCreatorUpload({
       {
         videoUploader,
         uploadedVideos,
+        videoThumbnailGenerator,
         onProgressEvent: (event) => {
           if (isActive) {
             dispatch(event);
@@ -58,5 +62,5 @@ export function useCreatorUpload({
       isActive = false;
       controller.abort();
     };
-  }, [dispatch, uploadSessionKey, uploadedVideos, videoUploader]);
+  }, [dispatch, uploadSessionKey, uploadedVideos, videoThumbnailGenerator, videoUploader]);
 }

@@ -12,6 +12,7 @@ import {
   pickCreatorVideo,
   type UploadedVideoRepositoryPort,
   type VideoPickerPort,
+  type VideoThumbnailGeneratorPort,
   type VideoUploaderPort,
 } from '@/src/use-cases/creator';
 import { AppColors, AppRadii, AppShadow, AppSpacing } from '@/src/presentation/shared/app-design';
@@ -21,6 +22,7 @@ export type CreatorUploadScreenProps = {
   videoPicker: VideoPickerPort;
   videoUploader: VideoUploaderPort;
   uploadedVideos?: UploadedVideoRepositoryPort;
+  videoThumbnailGenerator?: VideoThumbnailGeneratorPort;
   initialState?: CreatorUploadState;
   onExitFlow?: () => void;
 };
@@ -29,6 +31,7 @@ export function CreatorUploadScreen({
   videoPicker,
   videoUploader,
   uploadedVideos,
+  videoThumbnailGenerator,
   initialState,
   onExitFlow,
 }: CreatorUploadScreenProps) {
@@ -44,6 +47,7 @@ export function CreatorUploadScreen({
     state,
     videoUploader,
     uploadedVideos,
+    videoThumbnailGenerator,
     dispatch,
   });
 

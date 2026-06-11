@@ -1,7 +1,7 @@
 import { useReducer } from 'react';
+import { Image, type ImageProps } from 'expo-image';
 import {
   ActivityIndicator,
-  Image,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { describeMediaSource, logMediaDebug } from '@/src/diagnostics/media-debug-log';
 import {
   initialFollowerFeedState,
   reduceFollowerFeed,
@@ -160,13 +161,26 @@ function FollowerVideoCard({
   video: FollowerFeedVideo;
   dispatch: (event: FollowerFeedEvent) => void;
 }) {
+  const imageSource = getThumbnailImageSource(video);
+
+  logMediaDebug('follower card rendered', {
+    id: video.id,
+    title: video.title,
+    imageUri: video.imageUri,
+    imageSource: describeMediaSource(imageSource),
+  });
+
   return (
     <Pressable
       accessibilityRole="button"
       onPress={() => dispatch({ type: 'videoSelected', video })}
       style={styles.card}>
-      {video.imageUri ? (
-        <Image source={{ uri: video.imageUri }} style={styles.cardImage} />
+      {imageSource ? (
+        <Image
+          accessibilityLabel={`Thumbnail for ${video.title}`}
+          source={imageSource}
+          style={styles.cardImage}
+        />
       ) : (
         <View style={styles.cardImageFallback}>
           <Text style={styles.cardImageFallbackText}>Video</Text>
@@ -190,6 +204,18 @@ function FollowerVideoCard({
       </View>
     </Pressable>
   );
+}
+
+function getThumbnailImageSource(video: FollowerFeedVideo): ImageProps['source'] | null {
+  if (video.imageSource) {
+    return video.imageSource as ImageProps['source'];
+  }
+
+  if (video.imageUri) {
+    return { uri: video.imageUri };
+  }
+
+  return null;
 }
 
 function RefreshButton({ dispatch }: { dispatch: (event: FollowerFeedEvent) => void }) {

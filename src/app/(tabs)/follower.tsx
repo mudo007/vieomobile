@@ -1,12 +1,10 @@
 import { useRouter } from 'expo-router';
 
-import { createFakeFollowerFeed } from '@/src/adapters/fake';
+import { localFollowerFeed } from '@/src/adapters/in-memory';
 import { FollowerFeedScreen } from '@/src/presentation/follower';
-
-const demoFollowerFeed = createFakeFollowerFeed();
 
 export default function FollowerRoute() {
   const router = useRouter();
 
-  return <FollowerFeedScreen feedPort={demoFollowerFeed} onExitFlow={() => router.replace('/')} />;
+  return <FollowerFeedScreen feedPort={localFollowerFeed} onExitFlow={() => router.replace('/')} />;
 }

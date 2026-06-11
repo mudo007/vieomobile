@@ -13,6 +13,19 @@ const feedVideos: FollowerFeedVideo[] = [
   },
 ];
 
+const creatorUploadedVideos: FollowerFeedVideo[] = [
+  {
+    id: 'uploaded-video-1',
+    title: 'Launch demo',
+    creatorName: 'You',
+    durationLabel: '00:12',
+    description: 'A quick launch walkthrough.',
+    likeCount: 0,
+    commentCount: 0,
+    publishedAgo: 'Just now',
+  },
+];
+
 function createFeedPort(videos: FollowerFeedVideo[]): FollowerFeedPort {
   return {
     loadFollowerFeed: jest.fn().mockResolvedValue(videos),
@@ -62,6 +75,41 @@ describe('<FollowerFeedScreen />', () => {
     expect(await findByText('Launch demo')).toBeTruthy();
     expect(await findByText('Diogo')).toBeTruthy();
     expect(await findByText('00:42')).toBeTruthy();
+  });
+
+  it('renders creator uploaded metadata with a fallback thumbnail', async () => {
+    // Given
+    const feedPort = createFeedPort(creatorUploadedVideos);
+    const { findByText } = await render(<FollowerFeedScreen feedPort={feedPort} />);
+
+    // When / Then
+    expect(await findByText('Launch demo')).toBeTruthy();
+    expect(await findByText('You')).toBeTruthy();
+    expect(await findByText('A quick launch walkthrough.')).toBeTruthy();
+    expect(await findByText('Video')).toBeTruthy();
+    expect(await findByText('Just now')).toBeTruthy();
+  });
+
+  it('renders creator thumbnail images when the feed provides an image uri', async () => {
+    // Given
+    const feedPort = createFeedPort([
+      {
+        ...creatorUploadedVideos[0],
+        imageUri: 'file:///thumbnails/uploaded-video-1.jpg',
+      },
+    ]);
+    const { findByLabelText, findByText, queryByText } = await render(
+      <FollowerFeedScreen feedPort={feedPort} />
+    );
+
+    // When
+    await findByText('Launch demo');
+
+    // Then
+    expect((await findByLabelText('Thumbnail for Launch demo')).props.source).toContainEqual({
+      uri: 'file:///thumbnails/uploaded-video-1.jpg',
+    });
+    expect(queryByText('Video')).toBeNull();
   });
 
   it('keeps feed videos visible and shows a refresh indicator during pull refresh', async () => {

@@ -2,7 +2,7 @@
 
 Project dependencies should be installed through Expo where possible so versions resolve against the active Expo SDK.
 
-The current fake Creator and Follower vertical slices do not require additional runtime dependencies beyond the Expo scaffold. The testing stack is the important added dependency group for this phase.
+The current local Creator and Follower vertical slices use a small number of Expo runtime modules plus the test stack.
 
 ## Test dependencies
 
@@ -85,23 +85,63 @@ open -a Simulator
 eas build:run --platform ios
 ```
 
+### Seed simulator videos
+
+The iOS Simulator starts with an empty Photos library. Add videos before testing the Creator picker.
+
+Option 1: download videos from Safari inside the Simulator:
+
+```zsh
+open -a Simulator
+xcrun simctl openurl booted "https://samplelib.com/sample-mp4.html"
+```
+
+In the Simulator, open a sample `.mp4`, long-press the video, choose `Save Video`, and repeat for a second sample.
+
+Verify Photos has videos:
+
+```zsh
+xcrun simctl launch booted com.apple.mobileslideshow
+```
+
+Option 2: add local videos from your Mac:
+
+```zsh
+xcrun simctl addmedia booted /absolute/path/to/video1.mp4
+xcrun simctl addmedia booted /absolute/path/to/video2.mov
+```
+
+Example:
+
+```zsh
+xcrun simctl addmedia booted ~/Downloads/sample-5s.mp4
+```
+
 ## Expo native libraries
 
 See `docs/expo-libraries.md` for the library decision record.
 
-Current native module for the Creator plumbing:
+Current native modules for media plumbing:
 
 ```zsh
 cd /Users/diogoandrade/Repos/videomobile
 
 npx expo install expo-image-picker
+npx expo install expo-video
 ```
 
 Verify:
 
 ```zsh
-rg 'expo-image-picker' package.json package-lock.json
+rg 'expo-image-picker|expo-video|expo-image' package.json package-lock.json
 ```
+
+Notes:
+
+- `expo-image-picker` opens the system media library for Creator video selection.
+- `expo-video` generates local video thumbnails and will later be used for playback.
+- `expo-image` renders thumbnail sources, including native image references returned by `expo-video`.
+- Adding or removing native modules requires a new native build before OTA updates can rely on those modules.
 
 ## Future native dependencies
 
@@ -109,7 +149,6 @@ Do not install other native Expo modules until the fake vertical slices, present
 
 Likely future candidates:
 
-- `expo-video` for Follower playback.
 - `expo-media-library` only if a custom duplicate-filtering media browser becomes necessary.
 - `expo-file-system` only if URI pointers are too fragile and app-owned video copies are required.
 

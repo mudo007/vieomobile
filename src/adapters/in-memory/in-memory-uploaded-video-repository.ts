@@ -1,4 +1,5 @@
 import type { SelectedVideo, UploadedVideo } from '@/src/domain/creator';
+import { describeMediaSource, logMediaDebug } from '@/src/diagnostics/media-debug-log';
 import type {
   SaveUploadedVideoInput,
   UploadedVideoRepositoryPort,
@@ -23,10 +24,19 @@ export class InMemoryUploadedVideoRepository implements UploadedVideoRepositoryP
       mimeType: input.video.mimeType,
       durationMs: input.video.durationMs,
       sizeBytes: input.video.sizeBytes,
+      ...(input.video.thumbnailUri ? { thumbnailUri: input.video.thumbnailUri } : {}),
+      ...(input.video.thumbnailSource ? { thumbnailSource: input.video.thumbnailSource } : {}),
     };
 
     this.uploadedVideos.unshift(uploadedVideo);
     this.duplicateKeys.add(createVideoDuplicateKey(input.video));
+
+    logMediaDebug('uploaded video saved in memory', {
+      id: uploadedVideo.id,
+      title: uploadedVideo.title,
+      hasThumbnailUri: Boolean(uploadedVideo.thumbnailUri),
+      thumbnail: describeMediaSource(uploadedVideo.thumbnailSource ?? uploadedVideo.thumbnailUri),
+    });
 
     return uploadedVideo;
   }
